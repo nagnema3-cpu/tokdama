@@ -115,7 +115,7 @@ function decay(dt){
   if(!st.sick&&st.health<=30)getSick(st.poop?'응가를 오래 안 치워서':st.hunger<=0?'너무 배고파서':st.clean<20?'너무 더러워서':'몸이 약해져서');
   st.grow=(st.grow||0)+dt;if(stage()>lastStage)bump(0);
   st.care+=dt;while(st.care>=600){st.care-=600;if(avg()>50&&!st.sick){bump(1);st.gold+=5}}
-  if(st.asleep&&st.napUntil){st.energy+=dt/1.7;if(now>=st.napUntil){st.asleep=false;st.napUntil=0;say('낮잠 잘 잤다! 개운해요',4000);render()}}
+  if(st.asleep&&st.napUntil){st.energy=Math.min(100,st.energy+dt/1.7);if(now>=st.napUntil){st.asleep=false;st.napUntil=0;say('낮잠 잘 잤다! 개운해요',4000);render()}}
   if((st.teeth||0)>=4){hd2=D/240;st.health-=hd2}
   if(st.asleep&&st.energy>=100){st.asleep=false;say('푹 잤어요! 좋은 아침!',4000);render()}
 }
@@ -685,7 +685,7 @@ function drawFrame(){
     else if(a==='dance'){cx=36+Math.sin(t/320)*7;base=51-Math.abs(Math.sin(t/160))*2.4;dir=Math.cos(t/320)>0?1:-1}
     else if(a==='paint'){cx=34;dir=1}else if(a==='garden'){cx=36;dir=1}else if(a==='cookie'){cx=30;dir=1}else if(a==='blocks'){cx=36;dir=1}
     else if(a==='hide'){cx=31;base=51+(Math.sin(t/420)>0?0:9)}else cx=36}
-  else if(game&&game.type==='jump')ACT={a:'ex_'+game.ex,up:Date.now()-game.last<220,t:Date.now()};
+  else if(game&&game.type==='jump')ACT={a:'ex_'+(game.ex==='ball'?'kick':game.ex),up:Date.now()-game.last<220,t:Date.now()};
   ACTX={cx,base,ph:PHT[s]||20};
   if(st.spouse&&s===4&&!game&&!scene){const o={kind:st.kind,form:st.form,wear:st.wear,colorKind:st.colorKind,gender:st.gender};Object.assign(st,{kind:st.spouse.kind,form:st.spouse.form,wear:{furn:[]},colorKind:st.spouse.colorKind||null,gender:st.spouse.gender});cx=Math.min(cx,30);drawPet(4,cx+26,base,'happy',-1);Object.assign(st,o);pat(Math.round(cx)+11,18-(f%2),['.#.#.','#####','#####','.###.','..#..'],PINK)}
   drawPet(s,cx,base,scene&&scene.t==='hosp'?'normal':ACT?'happy':mood(),dir);
@@ -800,7 +800,7 @@ function render(){
   if(locked){box.classList.add('one');box.append(mk('🔒','잠금 풀기',lockScreen))}
   else if(!st.hatched){box.classList.add('one');box.append(mk('🥚','알 톡톡',tapEgg))}
   else if(game&&game.type==='pop'){box.classList.add('two');const bt=mk('🎈','풍선을 눌러요',()=>{});bt.disabled=true;box.append(bt,mk('🚪','나가기',quitGame,'quit'))}
-  else if(game&&game.type==='jump'){box.classList.add('two');box.append(mk(game.ic||'🏃','톡! 점프',jumpTap),mk('🚪','나가기',quitGame,'quit'))}
+  else if(game&&game.type==='jump'){exButtons(box)}
   else if(game){box.classList.add('two');
     const dis=game.type==='lr'&&(!!game.arrow||game.done);
     const l=mk('◀','왼쪽',()=>pick(-1)),r=mk('▶','오른쪽',()=>pick(1));l.disabled=r.disabled=dis;box.style.gridTemplateColumns='1fr 1fr 1fr';box.append(l,r,mk('🚪','나가기',quitGame,'quit'))}
@@ -819,7 +819,7 @@ function checkWarn(){if(!st.hatched||!st.name)return;st.warn=st.warn||{};let top
   STATS.forEach(([k])=>{const lv=st[k]<=30?2:st[k]<=50?1:0,prev=st.warn[k]||0;if(warnInit&&lv>prev&&(!top||lv>top[1]))top=[k,lv];st.warn[k]=lv});
   warnInit=true;if(top&&!game){const [k,lv]=top,n=STATS.find(x=>x[0]===k)[2];say(`${st.asleep?'(잠꼬대) ':''}${WARN[k][lv-1]} (${n} ${lv===2?'30%':'50%'})`,lv===2?6000:4500)}}
 function hearts(){
-  STATS.forEach(([k])=>{const n=st.hatched?Math.ceil(st[k]/10):0,e=$('h-'+k);e.innerHTML='<b>'+'♥'.repeat(n)+'</b>'+'♥'.repeat(10-n);e.classList.toggle('mid',st.hatched&&st[k]<=50&&st[k]>30);e.classList.toggle('low',st.hatched&&st[k]<=30)});
+  STATS.forEach(([k])=>{const n=st.hatched?Math.min(10,Math.max(0,Math.ceil(st[k]/10))):0,e=$('h-'+k);e.innerHTML='<b>'+'♥'.repeat(n)+'</b>'+'♥'.repeat(10-n);e.classList.toggle('mid',st.hatched&&st[k]<=50&&st[k]>30);e.classList.toggle('low',st.hatched&&st[k]<=30)});
   checkWarn();
   $('ttl').textContent=st.name?`${st.name}${st.gender==='girl'?' ♀':st.gender==='boy'?' ♂':''}`:'톡톡';$('chars').textContent=`👥 ${SLOT+1}번`;
   $('gold').textContent=`🪙 ${st.gold} 골드`;
@@ -1062,7 +1062,7 @@ function playDone(name,detail,gold,extra){st.plays++;
   st.cnt.play=(st.cnt.play||0)+1;eff(Object.assign({happy:10,learn:15,love:5,friend:5,energy:-5,hunger:-5,clean:-4},extra||{}),gold);
   fx={t:'heart',s:Date.now(),d:1800};bump(2);log(`${name}: ${detail}, 골드 ${gold}`);say(`${detail}! 골드 🪙${gold} 벌었어요!`,4500);save();render();act(name==='숨바꼭질'?'hide':name==='가위바위보'?'rps':name==='짝 맞추기'?'cards':'party',3600)}
 function moleGame(){let score=0,mole=-1,end=Date.now()+20000,alive=true,started=false;
-  const tick=()=>{if(!alive)return;if(started&&$('m').hidden){alive=false;return}started=true;const left=Math.ceil((end-Date.now())/1000);
+  const tick=()=>{if(!alive)return;if(started&&($('m').hidden||!$('mT').textContent.startsWith('🐹 두더지'))){alive=false;return}started=true;const left=Math.ceil((end-Date.now())/1000);
     if(left<=0){alive=false;closeSheet();playDone('두더지 잡기',`두더지 ${score}마리를 잡았어요`,Math.min(40,score*2),{fit:10});return}
     mole=(mole+1+rnd(8))%9;show(left);setTimeout(tick,Math.max(550,900-score*15))};
   const show=left=>sheet(`🐹 두더지 잡기 · ${left}초`,b=>{b.append(el('div','quiz',`잡은 두더지 ${score}마리`));const g=el('div','grid three molegrid');
@@ -1151,32 +1151,85 @@ function goSleep(nap){if(st.energy>=90)return say('아직 안 졸려요!');st.as
 const EXS=[['🪢','줄넘기','jump',null],['🏃','달리기','run','grass'],['🏊','수영','swim','sea'],['⚽','축구','ball','grass'],['🚲','자전거','bike','grass'],['⭕','훌라후프','hoop',null],['🥋','태권도','kick',null],['🧘','스트레칭','yoga',null]];
 function exercise(){
   const w=busy();if(w)return say(w);
-  sheet('🏃 무슨 운동 할까요?',b=>{const g=el('div','grid');EXS.forEach((x,i)=>g.append(mk(x[0],x[1],()=>{closeSheet();startEx(i)})));b.append(g,el('div','howdn','10초 동안 버튼을 톡톡 누를수록 운동을 많이 해요'))})}
+  sheet('🏃 무슨 운동 할까요?',b=>{const g=el('div','grid');EXS.forEach((x,i)=>g.append(mk(x[0],x[1],()=>{closeSheet();startEx(i)})));b.append(g,el('div','howdn','운동마다 하는 방법이 달라요! 시작하면 위에 방법이 나와요'))})}
+const EXHOW={jump:'줄이 발밑에 올 때 톡! 점프',run:'왼발·오른발을 번갈아 눌러요',swim:'왼팔·오른팔 번갈아, 🫧가 뜨면 숨쉬기',ball:'공이 발 앞에 오면 톡! 슛',
+  bike:'톡톡 눌러 속도를 🟩 초록칸에 맞춰요',hoop:'후프가 떨어지기 전에 톡톡 돌려요',kick:'나오는 기술 버튼을 빨리 눌러요',yoga:'버튼을 꾹 누르고 3초 버티기'};
+const EXUNIT={jump:'번 넘었어요',run:'m 달렸어요',swim:'m 헤엄쳤어요',ball:'골 넣었어요',bike:'점 받았어요',hoop:'초 돌렸어요',kick:'번 성공했어요',yoga:'개 자세 성공'};
+const KICKS=[['👊','지르기'],['🦶','앞차기'],['🛡️','막기']],POSES=[['🙆','만세 쭉'],['🙇','앞으로 숙이기'],['🤸','옆으로 쭉']];
 function startEx(i){
-  const [ic,n,ex,bg]=EXS[i];game={type:'jump',ex,ic,n,count:0,end:Date.now()+10000,last:0};if(bg)setScene('ex',10400,bg);
-  say(`${ic} ${n}! 톡톡 많이 눌러요 (10초)`,9e9);render();
-  game.iv=setInterval(()=>{if(!game||game.type!=='jump')return;const left=Math.ceil((game.end-Date.now())/1000);
-    say(`${ic} ${game.count}번 · ${Math.max(0,left)}초`,9e9);draw();
-    if(left<=0){clearInterval(game.iv);const c=game.count,gold=Math.min(30,Math.floor(c/2));game=null;scene=null;st.plays++;st.cnt.ex++;
-      const ext=ex==='yoga'?{happy:10,health:6,energy:-3}:ex==='swim'?{clean:20}:{};
-      eff(Object.assign({learn:10,health:Math.min(20,4+Math.floor(c/2)),fit:Math.min(40,10+c),happy:5,energy:-8,hunger:-10,clean:-6},ext),gold);bump(1);log(`${n} ${c}번 했어요`);
-      say(`${n} ${c}번! 몸이 튼튼해졌어요`,4500);save();render();act('medal',3200)}},200)}
+  const [ic,n,ex,bg]=EXS[i],dur=ex==='yoga'?15000:10000;
+  game={type:'jump',ex,ic,n,count:0,score:0,end:Date.now()+dur,last:0,t0:Date.now(),foot:0,arm:0,breath:false,bx:-6,shot:0,spd:0,inZone:0,hoopH:10,drops:0,cmd:rnd(3),cmdAt:Date.now(),pose:0,holdAt:0,miss:0,msg:''};
+  if(bg)setScene('ex',dur+400,bg);say(`${ic} ${n}! ${EXHOW[ex]}`,9e9);render();
+  game.iv=setInterval(exTick,100)}
+function exTick(){if(!game||game.type!=='jump')return;const g=game,now=Date.now(),left=Math.ceil((g.end-now)/1000);
+  if(g.ex==='ball'&&!g.shot){g.bx+=1.6;if(g.bx>40){g.bx=-6;g.miss++;g.msg='앗, 놓쳤어요!';g.last=now}}
+  if(g.ex==='ball'&&g.shot){g.shot++;if(g.shot>8){g.shot=0;g.bx=-6}}
+  if(g.ex==='bike'){g.spd=Math.max(0,g.spd-2.2);if(g.spd>=40&&g.spd<=75){g.inZone++;g.score=Math.floor(g.inZone/2)}}
+  if(g.ex==='hoop'){g.hoopH-=0.55;if(g.hoopH<=0){g.drops++;g.hoopH=10;g.msg='후프가 떨어졌어요! 다시 돌려요';g.last=now}else g.score+=0.1}
+  if(g.ex==='kick'&&now-g.cmdAt>1800){g.cmd=rnd(3);g.cmdAt=now;g.miss++;g.msg='조금 더 빨리!';g.last=now}
+  if(g.ex==='yoga'&&g.holdAt&&now-g.holdAt>=3000){g.score++;g.holdAt=0;g.pose=(g.pose+1)%3;g.last=now;g.msg='잘했어요! 다음 자세';render()}
+  say(exStatus(g,Math.max(0,left)),9e9);draw();
+  if(left<=0)exEnd()}
+function exStatus(g,left){const s=g.ex==='hoop'?Math.floor(g.score):g.score;let x='';
+  if(g.ex==='jump')x=`${s}번 넘었어요`;
+  else if(g.ex==='run')x=`${s}m · 다음은 ${g.foot?'오른발 👉':'👈 왼발'}`;
+  else if(g.ex==='swim')x=g.breath?'🫧 숨쉬기 눌러요!':`${s}m · ${g.arm?'오른팔 👉':'👈 왼팔'}`;
+  else if(g.ex==='ball')x=`⚽ ${s}골`;
+  else if(g.ex==='bike'){const b=Math.round(g.spd/10);x=`속도 ${'🟦'.repeat(Math.min(4,b))}${'🟩'.repeat(Math.max(0,Math.min(4,b-4)))}${b>7?'🔥':''} · ${s}점`}
+  else if(g.ex==='hoop')x=`${'🟣'.repeat(Math.max(1,Math.ceil(g.hoopH/2)))} · ${s}초`;
+  else if(g.ex==='kick'){const k=KICKS[g.cmd];x=`${k[0]} ${k[1]}! · ${s}번`}
+  else if(g.ex==='yoga'){const p=POSES[g.pose];x=g.holdAt?`${p[0]} 버텨요… ${Math.max(0,3-Math.floor((Date.now()-g.holdAt)/1000))}`:`${p[0]} ${p[1]} 꾹 누르기 · ${s}개`}
+  const m=g.msg&&Date.now()-g.last<900?g.msg+' · ':'';return `${g.ic} ${m}${x} · ${left}초`}
+function exEnd(){const g=game;clearInterval(g.iv);const ex=g.ex,s=Math.floor(g.score);
+  const p=Math.min(20,{jump:s*2,run:s/2,swim:s/2,ball:s*5,bike:s/2,hoop:s,kick:s*2,yoga:s*7}[ex]|0);
+  game=null;scene=null;st.plays++;st.cnt.ex++;const gold=Math.min(30,p+2);
+  const ext=ex==='yoga'?{happy:10,health:6,energy:-3}:ex==='swim'?{clean:20}:ex==='kick'?{happy:6}:ex==='ball'?{happy:8}:{};
+  eff(Object.assign({learn:10,health:Math.min(20,4+Math.floor(p/2)),fit:Math.min(40,10+p),happy:5,energy:-8,hunger:-10,clean:-6},ext),gold);bump(1);
+  log(`${g.n} ${s}${EXUNIT[ex]}`);say(`${g.n} ${s}${EXUNIT[ex]}! ${p>=14?'최고예요 🏅':p>=7?'잘했어요!':'다음엔 더 잘할 수 있어요!'}`,4500);save();render();act('medal',3200)}
+function exOk(msg){game.last=Date.now();if(msg)game.msg=msg;draw()}
+function exBad(msg){game.msg=msg;game.last=Date.now();game.bad=Date.now();draw()}
+function jumpTap(){const g=game;if(!g||g.type!=='jump')return;const now=Date.now();
+  if(g.ex==='jump'){const ph=((now-g.t0)%1000)/1000;if(ph>.72&&ph<.98){if(now-g.lastJump>600||!g.lastJump){g.score++;g.lastJump=now;exOk('폴짝!')}}else exBad('줄에 걸렸어요!')}
+  else if(g.ex==='ball'){if(g.shot)return;if(g.bx>=22&&g.bx<=32){g.score++;g.shot=1;exOk('골~인! ⚽')}else exBad(g.bx<22?'아직 멀어요':'늦었어요')}
+  else if(g.ex==='bike'){g.spd=Math.min(100,g.spd+9);exOk()}
+  else if(g.ex==='hoop'){g.hoopH=Math.min(10,g.hoopH+1.4);exOk()}}
+function exStep(side){const g=game;if(!g)return;if(side===g.foot){g.score++;g.foot=1-g.foot;exOk()}else exBad('발이 꼬였어요!')}
+function exArm(side){const g=game;if(!g)return;if(g.breath)return exBad('숨부터 쉬어요! 🫧');if(side===g.arm){g.count++;g.arm=1-g.arm;if(g.count%2===0)g.score++;if(g.count%8===0)g.breath=true;exOk()}else exBad('팔이 엉켰어요!')}
+function exBreath(){const g=game;if(!g)return;if(g.breath){g.breath=false;exOk('후~ 하!')}else exBad('아직 숨 안 쉬어도 돼요')}
+function exKick(k){const g=game;if(!g)return;if(k===g.cmd){g.score++;let n=rnd(3);if(n===g.cmd)n=(n+1)%3;g.cmd=n;g.cmdAt=Date.now();exOk('얍!')}else exBad('다른 기술이에요!')}
+function exButtons(box){const g=game,ex=g.ex,q=mk('🚪','나가기',quitGame,'quit');
+  const three=(a)=>{box.style.gridTemplateColumns='1fr 1fr 1fr';box.append(...a,q)};
+  if(ex==='run')return three([mk('👈','왼발',()=>exStep(0)),mk('👉','오른발',()=>exStep(1))]);
+  if(ex==='swim'){box.style.gridTemplateColumns='1fr 1fr 1fr 1fr';return box.append(mk('💪','왼팔',()=>exArm(0)),mk('💪','오른팔',()=>exArm(1)),mk('🫧','숨쉬기',exBreath),q)}
+  if(ex==='kick'){box.style.gridTemplateColumns='1fr 1fr 1fr 1fr';return box.append(...KICKS.map((k,i)=>mk(k[0],k[1],()=>exKick(i))),q)}
+  if(ex==='yoga'){const p=POSES[g.pose],b=mk(p[0],'꾹 누르기',()=>{});
+    const down=e=>{e.preventDefault();if(game&&!game.holdAt){game.holdAt=Date.now();game.msg=''}};
+    b.addEventListener('pointerdown',down);box.classList.add('two');return box.append(b,q)}
+  const lb={jump:'톡! 점프',ball:'톡! 슛',bike:'톡! 페달',hoop:'톡! 돌리기'}[ex]||'톡!';box.classList.add('two');box.append(mk(g.ic,lb,jumpTap),q)}
+window.addEventListener('pointerup',()=>{if(game&&game.type==='jump'&&game.ex==='yoga'&&game.holdAt){game.holdAt=0;exBad('조금 더 버텨요!')}});
+window.addEventListener('pointercancel',()=>{if(game&&game.type==='jump'&&game.ex==='yoga'&&game.holdAt){game.holdAt=0}});
 function exDraw(phase,cx,base){
-  const ex=game.ex,up=Date.now()-game.last<220;if(phase!=='pre')return [cx,base];
+  const g=game,ex=g.ex,now=Date.now(),up=now-g.last<220;
   if(phase==='pre'){
-    if(ex==='jump'){base=up?44:51}
-    else if(ex==='run')cx=10+(game.count*2)%52;
-    else if(ex==='bike'){cx=10+(game.count*2)%52;base=45}
-    else if(ex==='kick'||ex==='ball')base=up?48:51;
+    if(ex==='jump'){const lj=g.lastJump&&now-g.lastJump<300;base=lj?44:51}
+    else if(ex==='run')cx=10+(g.score*2)%52;
+    else if(ex==='bike'){cx=10+Math.floor((now-g.t0)/1000*g.spd/12)%52;base=45}
+    else if(ex==='kick')base=up?48:51;
+    else if(ex==='ball')cx=34;
+    else if(ex==='swim')base=48;
     return [cx,base]}
+  if(ex==='jump'){const ph=((now-g.t0)%1000)/1000,a=ph*Math.PI*2,yy=Math.round(base-14-Math.cos(a)*14);for(let x=-11;x<=11;x++){const k=1-(x/11)**2;px(cx+x,Math.round(base-14+(yy-(base-14))*k),'#8b5a2b')}}
   if(ex==='bike'){[-6,6].forEach(d=>{E(cx+d,49,3.5,3.5,OUT);E(cx+d,49,2.5,2.5,'#cfe9ff');px(cx+d,49,OUT)});rc(cx-6,45,12,1,RED)}
-  if(ex==='ball'){const bx=up?cx+18:cx+10,by=up?36:48;OE(bx,by,2.4,2.4,WH);px(bx,by,OUT);px(bx-1,by+1,OUT)}
-  if(ex==='hoop'){for(let x=-15;x<=15;x++){const yy=Math.round(Math.sqrt(1-(x/15)**2)*2.5);px(cx+x,40+((f%2)?yy:-yy),PINK);px(cx+x,40+((f%2)?yy:-yy)+1,'#ff6b9a')}}
-  if(ex==='swim'){for(let x=0;x<W;x++)px(x,44+((x+f)%4<2?0:1),'#3fa2e8');rc(0,46,W,8,'#7cc8ff')}
+  if(ex==='ball'){rc(62,32,1,20,WH);rc(62,32,9,1,WH);rc(70,32,1,20,WH);for(let y=34;y<52;y+=3)for(let x=64;x<70;x+=3)px(x,y,'#dfe6ee');
+    let bx,by;if(g.shot){bx=Math.round(cx+(66-cx)*g.shot/8);by=Math.round(48-Math.sin(g.shot/8*Math.PI)*12)}else{bx=Math.round(g.bx);by=49}
+    OE(bx,by,2.4,2.4,WH);px(bx,by,OUT);px(bx-1,by+1,OUT);if(!g.shot)rc(22,53,11,1,'#7bd17b')}
+  if(ex==='hoop'){const hy=Math.round(52-g.hoopH*1.3),sp=g.hoopH>3?(Math.floor(now/120)%2):0;for(let x=-15;x<=15;x++){const yy=Math.round(Math.sqrt(1-(x/15)**2)*2.5);px(cx+x,hy+(sp?yy:-yy),PINK);px(cx+x,hy+(sp?yy:-yy)+1,'#ff6b9a')}}
+  if(ex==='swim'){for(let x=0;x<W;x++)px(x,44+((x+Math.floor(now/150))%4<2?0:1),'#3fa2e8');rc(0,46,W,8,'#7cc8ff');if(up)px(cx+(g.arm?-9:9),42,WH);if(g.breath&&Math.floor(now/250)%2){OE(cx+8,30,2,2,'#e9f7ff');OE(cx+12,26,1.5,1.5,'#e9f7ff')}}
   if(ex==='kick'){rc(cx-8,44,16,1,OUT);if(up){star(cx+14,38,GOLD);star(cx+17,35,'#ffe45c')}}
-  if(ex==='run'&&f%2){px(cx-12,48,'#c9d2dd');px(cx-14,47,'#c9d2dd')}
+  if(ex==='yoga'&&g.holdAt){const p=Math.min(1,(now-g.holdAt)/3000);rc(cx-10,30,20,2,'#e6e6e6');rc(cx-10,30,Math.round(20*p),2,'#7bd17b')}
+  if(ex==='run'&&up){px(cx-12,48,'#c9d2dd');px(cx-14,47,'#c9d2dd')}
+  if(g.bad&&now-g.bad<400){px(cx+10,30,RED);px(cx+11,29,RED);px(cx+12,30,RED)}
   return [cx,base]}
-function jumpTap(){if(!game||game.type!=='jump')return;game.count++;game.last=Date.now();draw()}
 
 /* ----- study: 4 subjects x 3 levels ----- */
 const ENG=[['🍎','apple','사과'],['🍌','banana','바나나'],['🐶','dog','강아지'],['🐱','cat','고양이'],['🐟','fish','물고기'],['🚗','car','자동차'],['☀️','sun','해'],['🌙','moon','달'],['⭐','star','별'],['📚','book','책'],['🌳','tree','나무'],['🥛','milk','우유'],['🥚','egg','달걀'],['🐦','bird','새'],['⚽','ball','공'],['🏠','house','집']];
@@ -1216,7 +1269,9 @@ function study(){
     Object.entries(SUBJ).forEach(([k,[ic,n]])=>g.append(mk(ic,n,()=>pickLevel(k))));b.append(g)})}
 function pickLevel(k){const [ic,n,lvs]=SUBJ[k];
   sheet(`${ic} ${n} 단계 고르기`,b=>{lvs.forEach((d,i)=>{const best=st.studyBest[k+(i+1)];const stars=best==null?'':' '+'⭐'.repeat(best===5?3:best>=3?2:best>=1?1:0);
-    b.append(mk('',`${i+1}단계 · ${d}<br><small>맞힐 때마다 🪙${(i+1)*10}${best!=null?` · 최고 ${best}/5${stars}`:''}</small>`,()=>runStudy(k,i+1),'big lvl'))})})}
+    const lk=i>0&&(st.studyBest[k+i]||0)<3,tag=['🟢 쉬움','🟡 보통','🔴 어려움'][i];
+    const bt=mk('',lk?`🔒 ${i+1}단계 · ${tag}<br><small>${i}단계에서 3개 이상 맞히면 열려요</small>`:`${i+1}단계 · ${tag} · ${d}<br><small>맞힐 때마다 🪙${(i+1)*10}${best!=null?` · 최고 ${best}/5${stars}`:''}</small>`,()=>lk?say(`${i}단계부터 3개 이상 맞혀 봐요! 💪`):runStudy(k,i+1),'big lvl');if(lk)bt.style.opacity=.55;b.append(bt)});
+    b.append(el('div','howdn','쉬운 단계부터 차근차근! 5문제 중 3개 이상 맞히면 다음 단계가 열려요'))})}
 function runStudy(k,lv){
   const [ic,n,,gen]=SUBJ[k];const qs=[];let guard=0;while(qs.length<5&&guard++<50){const q=gen(lv);if(q.opts.includes(q.ans)&&!qs.some(x=>x.q===q.q))qs.push(q)}
   let i=0,right=0,locked=false;act('study',9e9);say(`${n} ${lv}단계 열공 중! ✏️`,9e9);
