@@ -967,8 +967,11 @@ function xClose(){const t=$('mT').textContent;if(xBack){const f=xBack;xBack=null
   if(locked){if(t.startsWith('👥'))return (typeof owner!=='undefined'&&!owner&&typeof busySlot==='function')?busySlot():lockScreen();return charSheet()}
   closeSheet()}
 $('mX').onclick=xClose;$('mXX').onclick=xClose;
-window.addEventListener('popstate',()=>{hPushed=false;
-  if(!$('m').hidden)xClose();else if(Date.now()-backAt>2500){backAt=Date.now();say('한 번 더 누르면 나가요',2500)}else{history.back();return}
+let exiting=false;
+function exitSheet(){sheet('👋 앱을 끌까요?',b=>{b.append(el('div','howdn',`${st.name||'친구'}는 그대로 저장돼요. 다음에 또 만나요!`));const r=el('div','grid two-col');
+  r.append(mk('🚪','종료하기',()=>{try{save();if(typeof pushNow==='function')pushNow()}catch(e){}exiting=true;closeSheet();say('안녕~ 또 놀러 와요! 👋',9e9);try{history.go(-(history.length-1))}catch(e){}setTimeout(()=>{try{window.close()}catch(e){}setTimeout(()=>{say('뒤로가기를 한 번 더 누르면 꺼져요 👋',9e9)},400)},250)},'big'),mk('🎮','계속 놀기',closeSheet,'big'));b.append(r)})}
+window.addEventListener('popstate',()=>{hPushed=false;if(exiting)return;
+  if(!$('m').hidden)xClose();else exitSheet();
   if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}});
 try{history.pushState({tk:1},'');hPushed=true}catch(e){}
 function mk(ic,lb,fn,cls){const b=document.createElement('button');b.innerHTML=`<span class="ic">${ic}</span>${lb}`;b.onclick=fn;if(cls)b.className=cls;return b}
