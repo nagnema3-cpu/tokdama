@@ -206,7 +206,7 @@ button.quit{background:#f1ecf5;box-shadow:0 5px 0 #d8cfe2}
 </div>
 <div class="more"><button id="bDiary"><span class="ic">📔</span>육아일기</button><button id="bDex"><span class="ic">📖</span>도감</button><button id="bWed"><span class="ic">💍</span>결혼</button><button id="bShell"><span class="ic">🎨</span>기기 색깔</button></div>
 <div class="cloudst" id="cloudst"></div>
-<button class="reset" id="reset">처음부터 다시 키우기</button>
+<button class="reset" id="reset">다시 키우기</button>
 </div>
 </main>
 
@@ -273,8 +273,12 @@ const ITEMS={
   blush:{n:'하트 볼터치',ic:'💗',p:40,slot:'makeup'},sparkle:{n:'반짝 눈화장',ic:'✨',p:50,slot:'makeup'},lips:{n:'앵두 립',ic:'💋',p:40,slot:'makeup'},
   wall_pink:{n:'분홍 벽지',ic:'🩷',p:40,slot:'wall'},wall_sky:{n:'하늘 벽지',ic:'🩵',p:40,slot:'wall'},wall_mint:{n:'민트 벽지',ic:'💚',p:40,slot:'wall'},wall_yellow:{n:'노랑 벽지',ic:'💛',p:40,slot:'wall'},
   floor_wood:{n:'나무 바닥',ic:'🪵',p:0,slot:'floor'},floor_carpet:{n:'보라 카펫',ic:'🟪',p:50,slot:'floor'},floor_tile:{n:'타일 바닥',ic:'⬜',p:40,slot:'floor'},
+  g_rocker:{n:'흔들의자',ic:'🪑',p:60,slot:'deco',bg:'grass'},g_swing:{n:'그네',ic:'🎠',p:70,slot:'deco',bg:'grass'},g_flowers:{n:'꽃밭',ic:'🌷',p:40,slot:'deco',bg:'grass'},g_basket:{n:'소풍 바구니',ic:'🧺',p:40,slot:'deco',bg:'grass'},g_butterfly:{n:'나비',ic:'🦋',p:50,slot:'deco',bg:'grass'},
+  s_coral:{n:'산호초',ic:'🪸',p:60,slot:'deco',bg:'sea'},s_parasol:{n:'파라솔',ic:'⛱️',p:60,slot:'deco',bg:'sea'},s_castle:{n:'모래성',ic:'🏰',p:50,slot:'deco',bg:'sea'},s_shell:{n:'진주 조개',ic:'🐚',p:40,slot:'deco',bg:'sea'},s_fish:{n:'물고기 떼',ic:'🐠',p:50,slot:'deco',bg:'sea'},
+  k_rainbow:{n:'무지개',ic:'🌈',p:80,slot:'deco',bg:'sky'},k_balloon:{n:'열기구',ic:'🎈',p:70,slot:'deco',bg:'sky'},k_kite:{n:'연',ic:'🪁',p:40,slot:'deco',bg:'sky'},k_sofa:{n:'구름 소파',ic:'☁️',p:60,slot:'deco',bg:'sky'},k_birds:{n:'새 친구들',ic:'🐦',p:40,slot:'deco',bg:'sky'},
+  n_tent:{n:'텐트',ic:'⛺',p:70,slot:'deco',bg:'night'},n_scope:{n:'망원경',ic:'🔭',p:70,slot:'deco',bg:'night'},n_fire:{n:'모닥불',ic:'🔥',p:50,slot:'deco',bg:'night'},n_fireflies:{n:'반딧불이',ic:'✨',p:50,slot:'deco',bg:'night'},n_lantern:{n:'등불',ic:'🏮',p:40,slot:'deco',bg:'night'},
   bed:{n:'침대',ic:'🛏️',p:80,slot:'furn'},plant:{n:'화분',ic:'🪴',p:40,slot:'furn'},lamp:{n:'스탠드',ic:'💡',p:50,slot:'furn'},teddy:{n:'곰 인형',ic:'🧸',p:60,slot:'furn'},shelf:{n:'책장',ic:'📚',p:70,slot:'furn'},rug:{n:'러그',ic:'🟣',p:40,slot:'furn'}};
-const SLOTS={head:'머리',face:'얼굴',neck:'목',makeup:'화장',bg:'배경',wall:'벽지',floor:'바닥',furn:'가구'};
+const SLOTS={head:'머리',face:'얼굴',neck:'목',makeup:'화장',bg:'배경',wall:'벽지',floor:'바닥',furn:'가구',deco:'꾸미기 물건'};
 const SHOPCAT=[['펫 꾸미기',['head','face','neck']],['배경',['bg']],['방 인테리어',['wall','floor','furn']]];
 function fresh(){return{hatched:false,taps:0,name:'',kind:'',born:0,points:0,care:0,hunger:80,happy:80,clean:90,energy:90,poop:0,asleep:false,poopAt:0,
   gold:50,health:100,love:60,smart:30,skill:30,fit:50,friend:40,learn:50,water:70,art:30,cnt:{study:0,cook:0,ex:0,art:0,walk:0,wash:0},paused:false,own:[],wear:{head:null,face:null,neck:null,makeup:null,bg:null,wall:null,floor:null,furn:[]},snacks:0,snackT:0,sick:false,everSick:false,dirtyT:0,starveT:0,form:'',plays:0,pets:0,snacksTotal:0,gen:1,album:[],diary:[],found:[],shell:'coral',last:Date.now()}}
@@ -613,7 +617,7 @@ function vPet(g,o){
   // gender marks
   if(o.gender==='girl'&&!o.asleep&&ek!=='happy'&&!cry){g.strokeStyle=VEYE;g.lineWidth=.55;[[Lx,-1],[Rx,1]].forEach(([x,d])=>{path(()=>{g.moveTo(x+d*ew*.8,ey-eh*.55);g.lineTo(x+d*(ew+.9),ey-eh*.85)});g.stroke()});g.lineWidth=.75}
   if(o.gender==='girl'&&s>=2&&!W.head){const rx0=hx+hrx*.62,ry0=top+1.4,z=.9+s*.2;[-1,1].forEach(d=>{path(()=>{g.moveTo(rx0,ry0);g.lineTo(rx0+d*2.2*z,ry0-1.3*z);g.lineTo(rx0+d*2.2*z,ry0+1.3*z);g.closePath()});fillS('#ff7fae')});ell(rx0,ry0,.75*z,.75*z,'#ff5a92')}
-  if(o.gender==='boy'&&s>=3&&!W.neck){const bx=hx,z=.75+s*.14,by=body?Math.max(hy+hry+.4,body.cy-body.ry*.35):Math.min(Math.max(my+2.6+z,hy+hry*.62),-1.4);[-1,1].forEach(d=>{path(()=>{g.moveTo(bx,by);g.lineTo(bx+d*2*z,by-1.2*z);g.lineTo(bx+d*2*z,by+1.2*z);g.closePath()});fillS('#4f9dff')});ell(bx,by,.7*z,.7*z,'#2f7fe0')}
+  if(o.gender==='boy'&&s>=3&&!W.neck){const bx=hx,z=.75+s*.14,by=body?body.cy-body.ry*.15:Math.min(Math.max(my+2.6+z,hy+hry*.62),-1.4);[-1,1].forEach(d=>{path(()=>{g.moveTo(bx,by);g.lineTo(bx+d*2*z,by-1.2*z);g.lineTo(bx+d*2*z,by+1.2*z);g.closePath()});fillS('#4f9dff')});ell(bx,by,.7*z,.7*z,'#2f7fe0')}
   // stage extras
   if(s===1){path(()=>{g.ellipse(hx,top+2.2,hrx*.78,3,0,Math.PI,0);g.lineTo(hx+hrx*.78,top+2.2);for(let i=6;i>=0;i--)g.lineTo(hx-hrx*.78+i*(hrx*1.56/6),top+2.2+(i%2?1.2:0))});fillS('#ffffff')}
   const NOLIMB=['fish','octopus','jellyfish','dropling'].includes(k);
@@ -691,6 +695,34 @@ function drawBg(b){
   else if(b==='kitchen'){rc(0,0,W,H,'#fffaf2');for(let x=0;x<W;x+=6)for(let y=0;y<30;y+=6)rc(x,y,5,5,'#f3f0ff');rc(0,40,W,14,'#e9c79f');rc(0,40,W,2,'#d1a877');OE(10,36,5,3,'#9aa5b1');rc(5,33,11,2,'#7d8894');for(let i=0;i<3;i++)if((f+i)%2)px(8+i*2,29-i,'#c9d2dd')}
   else if(b==='night'){rc(0,0,W,H,'#2d335e');STARS.forEach(([x,y],i)=>{if((f+i)%3)px(x,y,GOLD);else star(x,y,'#fff3b0')});E(60,9,4,4,'#fff3b0');E(62,7.5,3.4,3.4,'#2d335e');rc(0,48,W,6,'#3d4478')}
   else drawRoom();
+  if(b&&b!=='hosp'&&b!=='kitchen')drawDeco(b);
+}
+function drawDeco(b){const d=(st.wear&&st.wear.deco)||[],h=id=>d.includes(id);
+  if(b==='grass'){
+    if(h('g_swing')){rc(3,19,1,25,'#9a6a3c');rc(18,19,1,25,'#9a6a3c');rc(2,18,18,2,'#b5793f');const w=f%4<2?0:1;rc(6+w,20,1,16,'#7a5a3a');rc(15+w,20,1,16,'#7a5a3a');rc(5+w,36,12,2,'#ff7a7a');rc(5+w,38,12,1,'#d95a5a')}
+    if(h('g_rocker')){rc(65,27,2,14,'#a8703c');rc(66,28,1,9,'#ffb3c6');rc(57,36,9,2,'#c98a4b');rc(58,35,7,1,'#ffb3c6');rc(58,38,1,5,'#a8703c');rc(64,38,1,5,'#a8703c');
+      for(let x=55;x<=69;x++){const q=(x-62)/7;px(x,43-Math.round(q*q*2),'#7a4a2a')}}
+    if(h('g_flowers'))[2,6,10,14,57,61,65,69].forEach((x,i)=>{const c=[PINK,GOLD,'#b48cff',RED][i%4],y=50+(i%2);px(x,y+1,'#4fb36b');px(x,y+2,'#4fb36b');px(x-1,y,c);px(x+1,y,c);px(x,y-1,c);px(x,y,GOLD)});
+    if(h('g_basket')){OE(51,47,3.4,2.2,'#c98a4b');rc(48,44,7,1,RED);px(49,44,WH);px(51,44,WH);px(53,44,WH);for(let x=48;x<=54;x++){const q=(x-51)/3;px(x,42-Math.round((1-q*q)*3),'#8a5a2f')}}
+    if(h('g_butterfly'))[[0,'#ff9ec0'],[1,'#9fd0ff']].forEach(([i,c])=>{const x=24+i*22+Math.round(Math.sin((f+i*5)/3)*4),y=12+i*6+((f+i)%3);const o=(f+i)%2;px(x,y,OUT);px(x,y+1,OUT);rc(x-2,y-1+o,2,2,c);rc(x+1,y-1+o,2,2,c)})}
+  else if(b==='sea'){
+    if(h('s_coral')){[[5,41,1.6,6,'#ff8fa3'],[10,38,1.8,9,'#ff7a8a'],[15,43,1.4,4,'#ffb36b']].forEach(([x,y,a,hh,c2])=>{E(x,y,a,hh,c2);E(x-1.5,y-hh*.4,1,2,c2);E(x+1.5,y-hh*.2,1,1.6,c2)});E(7,35,1.4,1.4,'#ff8fa3');E(13,33,1.4,1.4,'#ff7a8a');E(17,38,1.2,1.2,'#ffb36b')}
+    if(h('s_parasol')){rc(63,26,1,22,'#8a5a2f');for(let y=0;y<5;y++){const w=3+y*2;for(let x=-w;x<=w;x++)px(63+x,22+y,((x+20)>>2)%2?RED:WH)}rc(61,48,6,1,'#e2c890')}
+    if(h('s_castle')){rc(17,43,10,5,'#e8c98a');rc(17,39,3,5,'#e8c98a');rc(24,39,3,5,'#e8c98a');[17,19,24,26].forEach(x=>px(x,38,'#e8c98a'));rc(21,45,2,3,'#b8945a');px(18,36,'#8a5a2f');px(18,37,'#8a5a2f');px(19,36,RED)}
+    if(h('s_shell')){for(let y=0;y<4;y++)rc(49-y,44+y,3+y*2,1,'#ffc2d6');px(50,48,'#ff9ec0');E(55,48,1,1,WH);px(55,47,'#e6eaff')}
+    if(h('s_fish'))[0,1,2].forEach(i=>{const x=((f*1.2+i*24)%86)-7,y=12+i*5+((f+i)%2);E(x,y,2,1.2,['#ffb648','#ff8fa3','#62b0ff'][i]);px(x-3,y-1,'#ffb648');px(x-3,y+1,'#ffb648');px(x+1,y-1,OUT)})}
+  else if(b==='sky'){
+    if(h('k_rainbow')){const C=['#ff8a8a','#ffc06b','#ffe57a','#9fe0a0','#8cc4ff','#c3a3ff'];for(let y=4;y<=30;y++)for(let x=8;x<=64;x++){const r=Math.hypot(x-36,(y-30)*1.1),k=Math.floor(28-r);if(k>=0&&k<6)px(x,y,C[k])}}
+    if(h('k_balloon')){const bb=(f%4<2)?0:1;E(10,12+bb,6,7,'#ff8a9a');E(10,12+bb,2,7,'#ffd36b');rc(8,24+bb,5,3,'#b5793f');px(6,19+bb,OUT);px(14,19+bb,OUT);rc(7,20+bb,1,4,OUT);rc(13,20+bb,1,4,OUT)}
+    if(h('k_kite')){const k=(f%2);for(let y=0;y<9;y++){const w=y<4?y:8-y;rc(62-w,6+y+k,w*2+1,1,y<4?'#62b0ff':'#ffcf33')}for(let i=0;i<14;i++)px(62+Math.round(Math.sin((i+f)/2)),15+i+k,'#7a6470');[18,23,28].forEach(y=>{px(61,y+k,RED);px(63,y+k,RED)})}
+    if(h('k_sofa')){E(19,45,7,3,WH);E(13,42,2.5,4,WH);E(25,42,2.5,4,WH);E(19,41,5,2.5,'#f3f8ff');rc(15,48,1,1,'#dbe8f7');rc(23,48,1,1,'#dbe8f7')}
+    if(h('k_birds'))[0,1,2].forEach(i=>{const x=((f*.8+i*9)%90)-8,y=8+i*3+(i%2),u=(f+i)%2;px(x-1,y-u,OUT);px(x,y,OUT);px(x+1,y-u,OUT)})}
+  else if(b==='night'){
+    if(h('n_tent')){for(let y=0;y<17;y++){const w=Math.round(y*.6);rc(10-w,31+y,w*2+1,1,'#7c8be0')}for(let y=8;y<17;y++){const w=Math.round((y-8)*.35);rc(10-w,31+y,w*2+1,1,'#3d4478')}px(10,30,GOLD);[[2,46],[6,40],[14,40],[18,46]].forEach(([x,y],i)=>px(x,y,(f+i)%2?GOLD:'#ff9ec0'))}
+    if(h('n_scope')){[[60,40,57,48],[60,40,63,48]].forEach(([x1,y1,x2,y2])=>{for(let t=0;t<=8;t++)px(Math.round(x1+(x2-x1)*t/8),Math.round(y1+(y2-y1)*t/8),'#8a7f9e')});for(let t=0;t<=10;t++){const x=56+t,y=Math.round(40-t*.7);rc(x,y-1,1,3,'#c9d2dd')}rc(66,32,2,3,'#ffcf33')}
+    if(h('n_fire')){rc(15,47,10,2,'#8a5a2f');rc(17,46,6,1,'#6e4524');const fl=f%2;E(20,43-fl,2.6,3.6,'#ff8a3d');E(20,44,1.4,2.2,'#ffd84d');}
+    if(h('n_fireflies'))[[24,22],[48,18],[30,34],[54,30],[14,26],[40,12]].forEach(([x,y],i)=>{if((f+i)%3){px(x,y,'#fffbd0');px(x-1,y,'#e8f27a');px(x+1,y,'#e8f27a');px(x,y-1,'#e8f27a');px(x,y+1,'#e8f27a')}});
+    if(h('n_lantern')){rc(52,48,1,1,OUT);rc(50,38,5,8,'#ff7a5a');rc(50,37,5,1,'#8a5a2f');rc(50,46,5,1,'#8a5a2f');rc(51,40,3,4,'#ffd36b')}}
 }
 function drawPoop(x,y){const c='#9a6a3c';OE(x,y,3,1.4,c);OE(x,y-2.4,2.2,1.2,c);OE(x,y-4.4,1.2,1,c);px(x-1,y-2,'#c79565');if(f%2){px(x-3,y-8,'#9fb07a');px(x-2,y-9,'#9fb07a');px(x+2,y-8,'#9fb07a');px(x+3,y-9,'#9fb07a')}}
 function drawApple(x,y){OE(x,y,2.4,2.2,RED);px(x-1,y-1,WH);rc(x,y-4,1,2,'#7a4a2a');px(x+1,y-4,'#5cc45c');px(x+2,y-5,'#5cc45c')}
@@ -781,7 +813,7 @@ let xMode='',xBack=null,hPushed=false,backAt=0;
 function xClose(){const t=$('mT').textContent;if(xBack){const f=xBack;xBack=null;f();return}
   if(xMode==='game'){quitSheet();return}
   if(locked){if(t.startsWith('👥'))return (typeof owner!=='undefined'&&!owner&&typeof busySlot==='function')?busySlot():lockScreen();return charSheet()}
-  closeSheet();if(st.hatched&&(!st.name||!st.kind||!st.gender))say('화면을 누르면 이름을 지을 수 있어요 ✏️',9e9)}
+  closeSheet()}
 $('mX').onclick=xClose;$('mXX').onclick=xClose;
 window.addEventListener('popstate',()=>{hPushed=false;
   if(!$('m').hidden)xClose();else if(Date.now()-backAt>2500){backAt=Date.now();say('한 번 더 누르면 나가요',2500)}else{history.back();return}
@@ -799,7 +831,7 @@ function askName(){
     const all=[];
     GROUPS.forEach(([gn,ks])=>{b.append(el('h3',null,gn));const g=el('div','grid');
       ks.forEach(k=>{const [ic,n]=KINDS[k];const btn=mk(ic,n,()=>{npick={kind:k,gender,name:inp.value};kindDetail(k,true)});if(k===kind)btn.classList.add('on');all.push(btn);g.append(btn)});b.append(g)});
-    const gp=el('div','growbox');gp.append(el('div','growt',`${KINDS[kind][0]} ${KINDS[kind][1]}로 키워요 · 친구를 누르면 크게 볼 수 있어요`),growRow(kind,(npick&&npick.gender)||st.gender));b.insertBefore(gp,b.children[1]);
+    b.insertBefore(el('div','howdn','👆 친구를 누르면 크게 볼 수 있어요'),b.children[1]);
     let gender=(npick&&npick.gender)||st.gender||null;b.append(el('h3',null,'남자예요? 여자예요?'));const gg=el('div','grid two-col');const gb=[['boy','👦','남자'],['girl','👧','여자']].map(([v,ic,n])=>{const bt=mk(ic,n,()=>{gender=v;gb.forEach(x=>x.classList.toggle('on',x===bt))},gender===v?'on':'');gg.append(bt);return bt});b.append(gg);
     b.append(el('div',null,'이름을 지어 주세요'));
     const inp=document.createElement('input');inp.id='nameI';inp.maxLength=6;inp.placeholder='콩이';inp.autocomplete='off';inp.value=(npick&&npick.name)||st.name||'';b.append(inp);
@@ -916,7 +948,7 @@ function pick(g){
       setTimeout(()=>{game=null;fx={t:'heart',s:Date.now(),d:1800};bump(2);save();render()},1600)}
     else{say(`${game.round+1}번째! 어느 쪽?`,9e9);render()}},1100)}
 document.addEventListener('keydown',e=>{if(!game||!$('m').hidden)return;if(game.type==='jump'&&(e.key===' '||e.key==='Enter')){e.preventDefault();jumpTap();return}if(e.key==='ArrowLeft')pick(-1);if(e.key==='ArrowRight')pick(1)});
-cv.onclick=e=>{if(locked)return;if(st.hatched&&(!st.name||!st.kind||!st.gender)&&$('m').hidden){askName();return}
+cv.onclick=e=>{if(locked)return;
   if(!st.hatched)return tapEgg();
   if(game&&game.type==='pop'){popAt(e);return}
   if(game&&game.type==='jump'){jumpTap();return}
@@ -1271,30 +1303,32 @@ function shop(){
           if(it.slot==='furn'){if(!st.wear.furn.includes(id))st.wear.furn.push(id)}else st.wear[it.slot]=id;
           fx={t:'heart',s:Date.now(),d:1500};save();hearts();shop();say(`${it.n} 샀어요! 바로 꾸몄어요`)});
         if(own)btn.classList.add('on');g.append(btn)});b.append(g)})})}
-const DRESS={pet:['💄 꾸미기',['head','face','neck','makeup'],'머리·얼굴·목·화장을 꾸며요'],home:['🏠 집 꾸미기',['bg','wall','floor','furn'],'배경을 "우리 방"으로 두면 벽지·바닥·가구가 보여요']};
+const DRESS={pet:['💄 꾸미기',['head','face','neck','makeup'],'머리·얼굴·목·화장을 꾸며요'],home:['🏠 집 꾸미기',['bg','wall','floor','furn'],'배경마다 놓을 수 있는 물건이 달라요']};
 let pendingBuy=null;
 function dressPreview(){const cv=$('cv'),c=document.createElement('canvas');c.className='dprev';c.width=cv.width;c.height=cv.height;
-  const sv=st.wear,t=pendingBuy&&ITEMS[pendingBuy];st.wear=Object.assign({},sv,{furn:[...(sv.furn||[])]});
-  if(t){if(t.slot==='furn'){if(!st.wear.furn.includes(pendingBuy))st.wear.furn.push(pendingBuy)}else st.wear[t.slot]=pendingBuy}
+  const sv=st.wear,t=pendingBuy&&ITEMS[pendingBuy];st.wear=Object.assign({},sv,{furn:[...(sv.furn||[])],deco:[...(sv.deco||[])]});
+  if(t){if(t.slot==='furn'||t.slot==='deco'){if(!st.wear[t.slot].includes(pendingBuy))st.wear[t.slot].push(pendingBuy);if(t.bg)st.wear.bg=t.bg}else st.wear[t.slot]=pendingBuy}
   try{draw();c.getContext('2d').drawImage(cv,0,0)}catch(e){}st.wear=sv;try{draw()}catch(e){}
   const w=el('div','dprevw');w.append(c,el('div','dprevt',t?`👀 ${t.n} 입어 보는 중 · 한 번 더 누르면 사요 (🪙${t.p})`:'✨ 지금 내 모습'));return w}
 function dressOf(cat){
   const [title,slots,tip]=DRESS[cat];const sh=$('m').querySelector('.sheet'),keep=$('m').hidden?0:sh.scrollTop;
   sheet(title,b=>{
     b.append(dressPreview(),el('div','stars',`내 골드 🪙 ${st.gold}`),el('div','howdn',`눌러 보면 위 그림에 바로 보여요 · 안 가진 건 한 번 더 누르면 사요 · ${tip}`));
-    if(cat==='home'){const g=el('div','grid three');const on=!st.wear.bg;const bt=mk('🏠','우리 방',()=>{st.wear.bg=null;save();dressOf(cat)},on?'on':'');b.append(el('h3',null,'배경'));g.append(bt);
-      Object.entries(ITEMS).filter(([,it])=>it.slot==='bg').forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g)}
+    if(cat==='home'){const g=el('div','grid three');const on=!st.wear.bg;const bt=mk('🏠','우리 방',()=>{st.wear.bg=null;pendingBuy=null;save();dressOf(cat)},on?'on':'');b.append(el('h3',null,'배경'));g.append(bt);
+      Object.entries(ITEMS).filter(([,it])=>it.slot==='bg').forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g);
+      const cb=st.wear.bg;if(cb&&ITEMS[cb]){b.append(el('h3',null,`${ITEMS[cb].ic} ${ITEMS[cb].n}에 놓을 물건`));const g2=el('div','grid three');
+        Object.entries(ITEMS).filter(([,it])=>it.slot==='deco'&&it.bg===cb).forEach(([id,it])=>g2.append(itemBtn(cat,id,it)));b.append(g2,el('div','howdn','여러 개를 함께 놓을 수 있어요. 다른 배경을 고르면 그 배경의 물건이 나와요'));return}}
     slots.filter(sl=>sl!=='bg').forEach(sl=>{b.append(el('h3',null,SLOTS[sl]));const g=el('div','grid three');
       Object.entries(ITEMS).filter(([,it])=>it.slot===sl&&it.p>0).forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g)})});sh.scrollTop=keep;fitSheet()}
 function itemBtn(cat,id,it){
-  const own=st.own.includes(id),sl=it.slot,on=sl==='furn'?st.wear.furn.includes(id):st.wear[sl]===id;
+  const sl=it.slot,multi=sl==='furn'||sl==='deco';if(multi&&!st.wear[sl])st.wear[sl]=[];const own=st.own.includes(id),on=multi?st.wear[sl].includes(id):st.wear[sl]===id;
   const sub=own?(on?'쓰는 중':'가지고 있어요'):(pendingBuy===id?'한 번 더 누르면 사요!':'🪙 '+it.p);
   const bt=mk(it.ic,`${it.n}<br><small>${sub}</small>`,()=>{
-    if(own){if(sl==='furn')st.wear.furn=on?st.wear.furn.filter(x=>x!==id):[...st.wear.furn,id];else st.wear[sl]=on?null:id;pendingBuy=null;save();dressOf(cat);return}
+    if(own){if(multi)st.wear[sl]=on?st.wear[sl].filter(x=>x!==id):[...st.wear[sl],id];else st.wear[sl]=on?null:id;pendingBuy=null;save();dressOf(cat);return}
     if(pendingBuy!==id){pendingBuy=id;dressOf(cat);return}
     if(st.gold<it.p){pendingBuy=null;say(`골드가 ${it.p-st.gold} 더 필요해요!`);dressOf(cat);return}
     st.gold-=it.p;goldPop();st.own.push(id);pendingBuy=null;log(`${it.n}를 샀어요`);
-    if(sl==='furn')st.wear.furn.push(id);else st.wear[sl]=id;fx={t:'heart',s:Date.now(),d:1500};save();hearts();say(`${it.n} 샀어요! 바로 꾸몄어요`);dressOf(cat)},
+    if(multi)st.wear[sl].push(id);else st.wear[sl]=id;fx={t:'heart',s:Date.now(),d:1500};save();hearts();say(`${it.n} 샀어요! 바로 꾸몄어요`);dressOf(cat)},
     (on?'on':'')+(!own?' lock':'')+(pendingBuy===id?' pend':''));
   return bt}
 function heartBuy(k,full){const [,ic,n]=STATS.find(x=>x[0]===k);const miss=Math.ceil((100-st[k])/10);if(miss<=0){say(`${n}은 벌써 가득해요!`);return false}
