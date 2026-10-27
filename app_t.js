@@ -605,22 +605,19 @@ function mk(ic,lb,fn,cls){const b=document.createElement('button');b.innerHTML=`
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 
 function growRow(k,g0,mood){const w=el('div','growrow');['아기','어린이','청소년','어른'].forEach((n,i)=>{const c=el('div','growc');c.append(petThumb({kind:k,stage:i+1,gender:g0||'girl',mood},34,46),el('small',null,n));w.append(c);if(i<3)w.append(el('span','growar','›'))});return w}
-let npick=null;
 function askName(){
-  let kind=(npick&&npick.kind)||st.kind||st.babyKind||'rabbit';
   sheet('알에서 나왔어요!',b=>{
-    b.append(el('div',null,'어떤 동물로 키울까요?'));
-    const all=[];
+    b.append(el('div',null,'어떤 동물로 키울까요?'),el('div','howdn','👆 친구를 누르면 크게 보고 고를 수 있어요'));
     GROUPS.forEach(([gn,ks])=>{b.append(el('h3',null,gn));const g=el('div','grid');
-      ks.forEach(k=>{const [ic,n]=KINDS[k];const btn=mk(ic,n,()=>{npick={kind:k,gender,name:inp.value};kindDetail(k,true)});if(k===kind)btn.classList.add('on');all.push(btn);g.append(btn)});b.append(g)});
-    b.insertBefore(el('div','howdn','👆 친구를 누르면 크게 볼 수 있어요'),b.children[1]);
-    let gender=(npick&&npick.gender)||st.gender||null;b.append(el('h3',null,'남자예요? 여자예요?'));const gg=el('div','grid two-col');const gb=[['boy','👦','남자'],['girl','👧','여자']].map(([v,ic,n])=>{const bt=mk(ic,n,()=>{gender=v;gb.forEach(x=>x.classList.toggle('on',x===bt))},gender===v?'on':'');gg.append(bt);return bt});b.append(gg);
-    b.append(el('div',null,'이름을 지어 주세요'));
-    const inp=document.createElement('input');inp.id='nameI';inp.maxLength=6;inp.placeholder='콩이';inp.autocomplete='off';inp.value=(npick&&npick.name)||st.name||'';b.append(inp);
-    const ok=mk('💖','이름 정하기',()=>{if(!gender){say('남자인지 여자인지 골라 주세요!');return}npick=null;st.gender=gender;const first=!st.name;st.kind=kind;st.name=inp.value.trim()||'콩이';if(first)log(`${st.gen>1?st.gen+'대째 ':''}${KINDS[kind][1]} ${st.name}가 태어났어요`);closeSheet();save();render();say(`안녕! 나는 ${st.name}야!`,5000)},'big');
-    b.append(ok);inp.onkeydown=e=>{if(e.key==='Enter')ok.click()};
+      ks.forEach(k=>{const [ic,n]=KINDS[k];g.append(mk(ic,n,()=>kindDetail(k,true)))});b.append(g)});
   },true);
 }
+function nameSheet(k,gd){const [ic,n]=KINDS[k];
+  sheet(`${ic} ${gd==='girl'?'여자':'남자'} ${n}`,b=>{
+    const r=el('div','growbox');r.append(growRow(k,gd));b.append(r,el('div',null,'이름을 지어 주세요'));
+    const inp=document.createElement('input');inp.id='nameI';inp.maxLength=6;inp.placeholder='콩이';inp.autocomplete='off';inp.value=st.name||'';b.append(inp);
+    const ok=mk('💖','이름 정하기',()=>{st.gender=gd;const first=!st.name;st.kind=k;st.name=inp.value.trim()||'콩이';if(first)log(`${st.gen>1?st.gen+'대째 ':''}${n} ${st.name}가 태어났어요`);closeSheet();save();render();say(`안녕! 나는 ${st.name}야!`,5000)},'big');
+    inp.onkeydown=e=>{if(e.key==='Enter')ok.click()};b.append(ok,mk('↩️','다른 친구 보기',askName,'big'))},true);xBack=()=>kindDetail(k,true)}
 function playMenu(){
   if(st.energy<15)return say('너무 피곤해요… 재워 주세요');
   if(st.sick)return say('아파서 못 놀아요… 약 먼저!');
@@ -761,7 +758,7 @@ function kindDetail(k,fromPick,has){const [ic,n]=KINDS[k];
     else{b.append(el('div','howdn','도감에는 어른 모습으로 담겨요. 키우면 색이 켜져요!'));const r=el('div','dexpair');
       [[false,'키우기 전'],[true,'키운 뒤']].forEach(([on,l])=>{const c=el('div','dexc big'+(on?'':' off'));c.append(petThumb({kind:k,stage:4,gender:'girl'},40,40),el('b',null,n),el('small',null,l));r.append(c)});b.append(r);
       if(has!=null)b.append(el('div','howdn',has?'⭐ 키워 본 친구예요!':'아직 키워 보지 않은 친구예요'))}
-    if(fromPick){const r=el('div','grid two-col');[['girl','👧','여자'],['boy','👦','남자']].forEach(([gd,i2,l])=>r.append(mk(i2,`${l} ${n}로 할래요`,()=>{npick=Object.assign(npick||{},{kind:k,gender:gd});askName()},'big')));b.append(r,mk('↩️','다른 친구 보기',askName,'big'))}
+    if(fromPick){b.append(el('h3',null,'남자예요? 여자예요?'));const r=el('div','grid two-col');[['girl','👧','여자'],['boy','👦','남자']].forEach(([gd,i2,l])=>r.append(mk(i2,l,()=>nameSheet(k,gd),'big')));b.append(r,mk('↩️','다른 친구 보기',askName,'big'))}
     else b.append(mk('📖','도감으로 돌아가기',dex,'big'))},fromPick?true:undefined);xBack=fromPick?askName:dex}
 function dexKind(k,has){kindDetail(k,false,has)}
 function dex(){sheet('📖 도감',b=>{
@@ -1096,7 +1093,7 @@ function dressOf(cat){
   const [title,slots,tip]=DRESS[cat];const sh=$('m').querySelector('.sheet'),keep=$('m').hidden?0:sh.scrollTop;
   sheet(title,b=>{
     b.append(dressPreview(),el('div','stars',`내 골드 🪙 ${st.gold}`),el('div','howdn',`눌러 보면 위 그림에 바로 보여요 · 안 가진 건 한 번 더 누르면 사요 · ${tip}`));
-    if(cat==='home'){const g=el('div','grid three');const on=!st.wear.bg;const bt=mk('🏠','우리 방',()=>{st.wear.bg=null;pendingBuy=null;save();dressOf(cat)},on?'on':'');b.append(el('h3',null,'배경'));g.append(bt);
+    if(cat==='home'){const g=el('div','grid three');const on=!st.wear.bg;const bt=mk('🏠','우리 방',()=>{st.wear.bg=null;pendingBuy=null;placeTab='room';save();dressOf(cat)},on?'on':'');b.append(el('h3',null,'배경'));g.append(bt);
       Object.entries(ITEMS).filter(([,it])=>it.slot==='bg').forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g);
       if(placeTab==null)placeTab=st.wear.bg||'room';
       b.append(el('h3',null,'🪄 배경마다 놓을 물건'));const tb=el('div','ctabs five');[['room','🏠','우리 방'],['grass','🌱','풀밭'],['sea','🌊','바다'],['sky','☁️','하늘'],['night','🌙','별밤']].forEach(([k,i2,l])=>tb.append(mk(i2,l,()=>{placeTab=k;pendingBuy=null;dressOf(cat)},placeTab===k?'on':'')));b.append(tb);
@@ -1109,7 +1106,8 @@ function itemBtn(cat,id,it){
   const sl=it.slot,multi=sl==='furn'||sl==='deco';if(multi&&!st.wear[sl])st.wear[sl]=[];const own=st.own.includes(id),on=multi?st.wear[sl].includes(id):st.wear[sl]===id;
   const sub=own?(on?'쓰는 중':'가지고 있어요'):(pendingBuy===id?'한 번 더 누르면 사요!':'🪙 '+it.p);
   const bt=mk(it.ic,`${it.n}<br><small>${sub}</small>`,()=>{
-    if(own){if(multi)st.wear[sl]=on?st.wear[sl].filter(x=>x!==id):[...st.wear[sl],id];else st.wear[sl]=on?null:id;if(it.bg&&!on&&st.own.includes(it.bg))st.wear.bg=it.bg;pendingBuy=null;save();dressOf(cat);return}
+    if(own){if(sl==='bg')placeTab=on?'room':id;if(multi)st.wear[sl]=on?st.wear[sl].filter(x=>x!==id):[...st.wear[sl],id];else st.wear[sl]=on?null:id;if(it.bg&&!on&&st.own.includes(it.bg))st.wear.bg=it.bg;pendingBuy=null;save();dressOf(cat);return}
+    if(it.slot==='bg')placeTab=id;
     if(pendingBuy!==id){pendingBuy=id;dressOf(cat);return}
     if(st.gold<it.p){pendingBuy=null;say(`골드가 ${it.p-st.gold} 더 필요해요!`);dressOf(cat);return}
     st.gold-=it.p;goldPop();st.own.push(id);pendingBuy=null;log(`${it.n}를 샀어요`);
