@@ -74,4 +74,4 @@ else if(DB){(async()=>{try{const pn=await api(`users/${USER}/pin`);if(pn==null){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')goAway();else comeBackOnline()});
   window.addEventListener('pagehide',goAway);
   const _cs=charSheet;window._locks={};charSheet=async function(){try{const u=await api(`users/${USER}`)||{};const sl=u.slots||{};[0,1,2,3].forEach(i=>{if(i===SLOT||!sl[i])return;const l=slotData(i);if(!l||(sl[i].last||0)>(l.last||0))localStorage.setItem(slotKey(i),JSON.stringify(sl[i]))});window._locks=u.locks||{}}catch(e){}_cs()};$('chars').onclick=()=>charSheet()}
-cloudStatus(USER?(DB?`☁️ ${USER}`:`📱 ${USER} (이 기기 저장)`):'');{const v=document.createElement('div');v.className='cloudst';v.id='appver';v.textContent='버전 '+APPVER;const cs=document.getElementById('cloudst');if(cs)cs.after(v)}
+cloudStatus(USER?(DB?`☁️ ${USER}`:`📱 ${USER} (이 기기 저장)`):'')

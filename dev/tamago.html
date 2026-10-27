@@ -773,10 +773,12 @@ function idleTalk(){
 /* ---------- sheets ---------- */
 function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=false;xMode=noClose||'';xBack=null;if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
 function fitSheet(){const sh=$('m').querySelector('.sheet');if(!sh||$('m').hidden)return;sh.style.zoom='';sh.style.width='';sh.style.maxHeight='';if(innerWidth>600)return;const r=sh.clientHeight/sh.scrollHeight;if(r<1){const z=Math.max(.62,r-.01);sh.style.zoom=z;sh.style.width=Math.min(340,innerWidth-24)/z+'px';sh.style.maxHeight=(innerHeight-24)/z+'px'}}
-function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600)return;
-  const over0=()=>document.documentElement.scrollHeight-innerHeight;
-  for(let k=0;k<3;k++){const over=over0();if(over<=1)break;bz.style.setProperty('width',Math.max(180,bz.offsetWidth-over*1.34-2)+'px','important')}
-  const ov=over0();if(ov>1&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.78,(h-ov-2)/h)}if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
+function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600){if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}return}
+  const last=()=>{let b=0;document.querySelectorAll('header.top,main.layout>*').forEach(e=>{if(e.offsetParent){const r=e.getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom+scrollY)}});return b+8};
+  const maxW=Math.min(innerWidth-36,520);let w=bz.offsetWidth;
+  for(let k=0;k<4;k++){const slack=innerHeight-last();if(Math.abs(slack)<=2)break;w=Math.max(170,Math.min(maxW,w+slack*1.3));bz.style.setProperty('width',w+'px','important')}
+  const ov=last()-innerHeight;if(ov>2&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.8,(h-ov-2)/h)}
+  if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
 window.addEventListener('resize',()=>{fitScreen();fitSheet()});
 function closeSheet(){$('m').hidden=true}
 let xMode='',xBack=null,hPushed=false,backAt=0;

@@ -159,7 +159,7 @@ body{gap:8px!important;padding-block:10px 20px!important}
 button.quit{background:#f1ecf5;box-shadow:0 5px 0 #d8cfe2}
 .wedrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}.wedheart{font-size:1.8rem}
 .slotc{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--page);border-radius:14px;padding:8px}.slotc.cur{outline:3px solid var(--shell)}.slotc b{font-weight:400;font-size:.92rem}.slotc small{color:var(--muted);font-size:.78rem;min-height:1.1em}.slotc .go{flex-direction:row;padding:6px 10px;font-size:.85rem}
-@media (max-width:600px){.layout{flex:1}.toy{flex:1;justify-content:center}}
+@media (max-width:600px){.layout{flex:none}.toy{flex:none}}
 .login{position:fixed;inset:0;z-index:50;background:var(--page);background-image:radial-gradient(var(--dot) 1.5px,transparent 1.5px);background-size:18px 18px;display:flex;align-items:center;justify-content:center;padding:16px}
 .lcard{background:#fff;border-radius:28px;padding:26px 22px;width:min(360px,100%);box-sizing:border-box;display:flex;flex-direction:column;gap:12px;text-align:center;box-shadow:0 6px 0 var(--dot)}
 .lhead{font-size:1.8rem;color:var(--shell-lo)}.lsub{margin:0;color:var(--muted)}.lnote{margin:0;font-size:.8rem;color:var(--muted);line-height:1.5}
@@ -804,10 +804,12 @@ function idleTalk(){
 /* ---------- sheets ---------- */
 function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=false;xMode=noClose||'';xBack=null;if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
 function fitSheet(){const sh=$('m').querySelector('.sheet');if(!sh||$('m').hidden)return;sh.style.zoom='';sh.style.width='';sh.style.maxHeight='';if(innerWidth>600)return;const r=sh.clientHeight/sh.scrollHeight;if(r<1){const z=Math.max(.62,r-.01);sh.style.zoom=z;sh.style.width=Math.min(340,innerWidth-24)/z+'px';sh.style.maxHeight=(innerHeight-24)/z+'px'}}
-function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600)return;
-  const over0=()=>document.documentElement.scrollHeight-innerHeight;
-  for(let k=0;k<3;k++){const over=over0();if(over<=1)break;bz.style.setProperty('width',Math.max(180,bz.offsetWidth-over*1.34-2)+'px','important')}
-  const ov=over0();if(ov>1&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.78,(h-ov-2)/h)}if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
+function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600){if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}return}
+  const last=()=>{let b=0;document.querySelectorAll('header.top,main.layout>*').forEach(e=>{if(e.offsetParent){const r=e.getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom+scrollY)}});return b+8};
+  const maxW=Math.min(innerWidth-36,520);let w=bz.offsetWidth;
+  for(let k=0;k<4;k++){const slack=innerHeight-last();if(Math.abs(slack)<=2)break;w=Math.max(170,Math.min(maxW,w+slack*1.3));bz.style.setProperty('width',w+'px','important')}
+  const ov=last()-innerHeight;if(ov>2&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.8,(h-ov-2)/h)}
+  if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
 window.addEventListener('resize',()=>{fitScreen();fitSheet()});
 function closeSheet(){$('m').hidden=true}
 let xMode='',xBack=null,hPushed=false,backAt=0;
@@ -1426,7 +1428,7 @@ function charSheet(){sheet('👥 캐릭터 고르기 (4명까지)',b=>{b.append(
     card.append(petThumb(d&&d.hatched&&d.kind?Object.assign({},d,{stage:sg}):null,72,54));
     const nm=d&&d.name?`${d.name} ${d.gender==='girl'?'♀':d.gender==='boy'?'♂':''}`:d&&d.hatched===false&&d.taps?'알':'비어 있어요';
     const stt=(i!==SLOT&&window._locks&&typeof lockFresh==='function'&&lockFresh(window._locks[i])?'📵 다른 기기에서 사용 중 · ':'')+(!d||!d.name?'':d.ended?'💍 해피 엔딩':`${KINDS[d.kind]?KINDS[d.kind][1]:''} ${STG[sg]}${i!==SLOT&&d.paused?' · 쉬는 중':''}`);
-    card.append(el('b',null,`${i+1}번 · ${nm}${d&&d.lock?' 🔒':''}`),el('small',null,stt));card.append(mk('',i===SLOT?'지금 키우는 중':d&&d.name?'이 캐릭터로':'새로 만들기',()=>switchSlot(i),'go'));g.append(card)});b.append(g);b.append(mk('🔁','다시 키우기',()=>{closeSheet();$('reset').onclick()},'big'));if(st.hatched&&st.name&&!locked)b.append(st.lock?mk('🔓','지금 캐릭터 잠금 풀기',()=>{delete st.lock;save();charSheet();say('잠금을 풀었어요')},'big'):mk('🔒','지금 캐릭터에 비밀번호 걸기',setLock,'big'));if(USER){b.append(el('div','howdn',DB?'☁️ 자동 저장돼요. 앱을 닫으면 다른 휴대폰에서 이어서 키울 수 있어요.':'📱 이 기기에 자동 저장돼요.'),mk('🚪',`로그아웃 (${USER})`,logout,'big'))}})}
+    card.append(el('b',null,`${i+1}번 · ${nm}${d&&d.lock?' 🔒':''}`),el('small',null,stt));card.append(mk('',i===SLOT?'지금 키우는 중':d&&d.name?'이 캐릭터로':'새로 만들기',()=>switchSlot(i),'go'));g.append(card)});b.append(g);b.append(mk('🔁','다시 키우기',()=>{closeSheet();$('reset').onclick()},'big'));if(st.hatched&&st.name&&!locked)b.append(st.lock?mk('🔓','지금 캐릭터 잠금 풀기',()=>{delete st.lock;save();charSheet();say('잠금을 풀었어요')},'big'):mk('🔒','지금 캐릭터에 비밀번호 걸기',setLock,'big'));if(USER){b.append(el('div','howdn',DB?'☁️ 자동 저장돼요. 앱을 닫으면 다른 휴대폰에서 이어서 키울 수 있어요.':'📱 이 기기에 자동 저장돼요.'),mk('🚪',`로그아웃 (${USER})`,logout,'big'),el('div','howdn','버전 '+APPVER))}})}
 $('chars').onclick=charSheet;
 async function doSave(){save();if(!USER){say('로그인하면 온라인에 저장돼요');return}if(!DB){say('이 기기에 저장했어요 💾');return}say('저장하는 중…');say(await cloudPush()?'온라인에 저장했어요 ☁️':'저장 실패! 인터넷을 확인해 주세요')}
 function doLoad(){if(!USER||!DB){say('로그인하고 온라인 저장을 켜면 불러올 수 있어요');return}say('불러오는 중…');cloudLoad(true).then(()=>say('불러왔어요 📥'))};
@@ -1522,7 +1524,7 @@ else if(DB){(async()=>{try{const pn=await api(`users/${USER}/pin`);if(pn==null){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')goAway();else comeBackOnline()});
   window.addEventListener('pagehide',goAway);
   const _cs=charSheet;window._locks={};charSheet=async function(){try{const u=await api(`users/${USER}`)||{};const sl=u.slots||{};[0,1,2,3].forEach(i=>{if(i===SLOT||!sl[i])return;const l=slotData(i);if(!l||(sl[i].last||0)>(l.last||0))localStorage.setItem(slotKey(i),JSON.stringify(sl[i]))});window._locks=u.locks||{}}catch(e){}_cs()};$('chars').onclick=()=>charSheet()}
-cloudStatus(USER?(DB?`☁️ ${USER}`:`📱 ${USER} (이 기기 저장)`):'');{const v=document.createElement('div');v.className='cloudst';v.id='appver';v.textContent='버전 '+APPVER;const cs=document.getElementById('cloudst');if(cs)cs.after(v)}
+cloudStatus(USER?(DB?`☁️ ${USER}`:`📱 ${USER} (이 기기 저장)`):'')
 
 if(USER&&st.lock&&!unlockedHere(SLOT))lockScreen();
 else if(USER&&st.hatched&&(!st.name||!st.kind||!st.gender))askName();
