@@ -132,6 +132,8 @@ body{gap:8px!important;padding-block:10px 20px!important}
 .dseq{display:flex;justify-content:center;gap:8px;font-size:2rem}.dseq span{opacity:.45}.dseq .done{opacity:1;filter:grayscale(.2)}.dseq .now{opacity:1;transform:scale(1.25)}
 .ckprev{width:100%;border-radius:14px}.towers{display:flex;justify-content:center;gap:28px}.tower{display:flex;flex-direction:column;align-items:center;gap:3px}.blk{width:46px;height:20px;border-radius:6px;border:2px solid #6e5866}.blk.empty{border-style:dashed;opacity:.35}
 .grid.five{grid-template-columns:repeat(5,1fr)}.blkbtn{height:46px;font-size:.75rem;color:#4a3a4f}
+.molegrid .mole{height:62px;font-size:1.6rem;background:#c9a77c;box-shadow:0 4px 0 #9a7a52}.molegrid .mole.up{background:#ffe0a8;animation:kb .3s infinite alternate}
+.cswatch{height:80px;border-radius:18px;border:3px solid #6e5866;margin:4px 20px}.simon{height:90px;border-radius:22px;box-shadow:0 5px 0 rgba(0,0,0,.2);opacity:.55}.simon.lit{opacity:1;transform:scale(1.05);box-shadow:0 0 0 5px #fff,0 0 18px 6px rgba(255,255,255,.9)}
 .ctabs.five{grid-template-columns:repeat(5,1fr)}.ctabs.five button{font-size:.7rem}.ctabs.three{grid-template-columns:repeat(3,1fr)}.dexpair{display:flex;justify-content:center;gap:14px}.dexpair .dexc{display:flex;flex-direction:column;align-items:center;width:120px}.dexc.big canvas{width:110px;border-radius:12px;background:#fff7ea}.dexc.big{font-size:1rem}
 .growbox{background:var(--page);border-radius:14px;padding:6px 4px}.growt{font-size:.85rem;color:var(--muted);margin-bottom:2px}
 .growrow{display:flex;align-items:center;justify-content:center;gap:2px}.growc{display:flex;flex-direction:column;align-items:center;font-size:.72rem}.growc canvas{width:62px;border-radius:10px}.growar{color:var(--muted);font-size:1.1rem}
@@ -936,10 +938,12 @@ function xClose(){const t=$('mT').textContent;if(xBack){const f=xBack;xBack=null
   if(locked){if(t.startsWith('👥'))return (typeof owner!=='undefined'&&!owner&&typeof busySlot==='function')?busySlot():lockScreen();return charSheet()}
   closeSheet()}
 $('mX').onclick=xClose;$('mXX').onclick=xClose;
-let exiting=false;
+let exitArmed=0,ignorePop=false;
 function exitSheet(){sheet('👋 앱을 끌까요?',b=>{b.append(el('div','howdn',`${st.name||'친구'}는 그대로 저장돼요. 다음에 또 만나요!`));const r=el('div','grid two-col');
-  r.append(mk('🚪','종료하기',()=>{try{save();if(typeof pushNow==='function')pushNow()}catch(e){}exiting=true;closeSheet();say('안녕~ 또 놀러 와요! 👋',9e9);try{history.go(-(history.length-1))}catch(e){}setTimeout(()=>{try{window.close()}catch(e){}setTimeout(()=>{say('뒤로가기를 한 번 더 누르면 꺼져요 👋',9e9)},400)},250)},'big'),mk('🎮','계속 놀기',closeSheet,'big'));b.append(r)})}
-window.addEventListener('popstate',()=>{hPushed=false;if(exiting)return;
+  r.append(mk('🚪','종료하기',()=>{try{save();if(typeof pushNow==='function')pushNow()}catch(e){}closeSheet();try{window.close()}catch(e){}
+    say('👋 뒤로가기를 한 번 더 누르면 꺼져요',5000);if(hPushed){ignorePop=true;hPushed=false;history.back()}exitArmed=Date.now();
+    setTimeout(()=>{exitArmed=0;if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}},5000)},'big'),mk('🎮','계속 놀기',closeSheet,'big'));b.append(r)})}
+window.addEventListener('popstate',()=>{if(ignorePop){ignorePop=false;return}hPushed=false;if(exitArmed)return;
   if(!$('m').hidden)xClose();else exitSheet();
   if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}});
 try{history.pushState({tk:1},'');hPushed=true}catch(e){}
@@ -970,6 +974,9 @@ function playMenu(){
     b.append(mk('✌️','가위바위보',()=>{closeSheet();rps()},'big'));
     b.append(mk('🃏','짝 맞추기',()=>{closeSheet();memory()},'big'));
     b.append(mk('🎈','풍선 터뜨리기 (15초)',()=>{closeSheet();startPop()},'big'));
+    b.append(mk('🐹','두더지 잡기 (20초)',()=>{closeSheet();moleGame()},'big'));
+    b.append(mk('🎨','같은 색 찾기',()=>{closeSheet();colorGame()},'big'));
+    b.append(mk('🔔','순서 기억하기',()=>{closeSheet();simonGame()},'big'));
     b.append(el('div',null,'잘할수록 골드 🪙 를 많이 받아요'));
   });
 }
@@ -993,7 +1000,7 @@ function render(){
   else if(st.paused){box.classList.add('one');box.append(mk('🏠','다녀왔어요! (다시 시작)',comeBack,'big'))}
   else if(st.asleep){box.classList.add('one');box.append(mk('☀️','깨우기',wake))}
   else{box.className='boxes';BOXES.forEach(([t,list])=>{const bx=el('div','bx'+(list.length>=4?' wide':''));bx.append(el('div','bxt',t));const g=el('div','bxg');g.style.gridTemplateColumns=`repeat(${list.length===5?5:list.length===4?4:list.length===2?2:3},1fr)`;
-    list.forEach(([ic,n,fn])=>g.append(mk(ic,n,()=>window[fn](),((fn==='medicine'&&(st.sick||st.health<45))||(fn==='hospital'&&st.sick))?'alert':'')));bx.append(g);box.append(bx)})}
+    list.forEach(([ic,n,fn])=>g.append(mk(ic,n,()=>window[fn](),(fn==='clinic'&&(st.sick||st.health<45))?'alert':'')));bx.append(g);box.append(bx)})}
   hearts();
 }
 const WARN={learn:['뭔가 하고 싶어요~','심심해요! 놀거나 배우고 싶어요 🌟'],water:['목이 조금 말라요~','목말라요! 물 주세요 💧'],art:['그림 그리고 싶어요','심심해요! 그림 그려요 🎨'],hunger:['배가 조금 고파요~ 🍙','배고파요! 밥 주세요 😢'],happy:['조금 심심해요~','너무 심심해요… 놀아 주세요 😢'],clean:['몸이 조금 근질근질해요','냄새나요! 씻겨 주세요 🫧'],energy:['조금 졸려요~','너무 졸려요… 재워 주세요 😴'],
@@ -1032,6 +1039,8 @@ function eff(o,gold){const c=$('chips');c.innerHTML='';
   if(gold){st.gold+=gold;c.append(el('span','',`🪙+${gold}`));goldPop()}
   c.style.opacity=1;clearTimeout(chipT);chipT=setTimeout(()=>c.style.opacity=0,2600);hearts()}
 function wake(){const tired=st.energy<60;st.asleep=false;eff({happy:tired?-8:5});say(tired?'으음… 아직 졸려요':'잘 잤다!');save();render()}
+function clinic(){sheet('🏥 병원',b=>{b.append(el('div','howdn',st.sick?'아파요! 약을 먹거나 진료를 받아요':'건강 지키기 · 아플 땐 꼭 와요'));const g=el('div','grid two-col');
+  g.append(mk('💊','약 먹기<br><small>건강 하트 회복</small>',()=>{closeSheet();medicine()}),mk('🩺','진료 받기<br><small>의사 선생님 진찰</small>',()=>{closeSheet();hospital()}));b.append(g)})}
 function medicine(){
   if(!st.sick&&st.health>=90)return say('안 아파요! 튼튼해요 💪');
   const was=st.sick;st.sick=false;st.snacks=0;fx={t:'med',s:Date.now(),d:1600};
@@ -1244,6 +1253,24 @@ function eatMeal(m,fav){
 function playDone(name,detail,gold,extra){st.plays++;
   st.cnt.play=(st.cnt.play||0)+1;eff(Object.assign({happy:10,learn:15,love:5,friend:5,energy:-10,hunger:-5,clean:-4},extra||{}),gold);
   fx={t:'heart',s:Date.now(),d:1800};bump(2);log(`${name}: ${detail}, 골드 ${gold}`);say(`${detail}! 골드 🪙${gold} 벌었어요!`,4500);save();render();act(name==='숨바꼭질'?'hide':name==='가위바위보'?'rps':name==='짝 맞추기'?'cards':'party',3600)}
+function moleGame(){let score=0,mole=-1,end=Date.now()+20000,alive=true,started=false;
+  const tick=()=>{if(!alive)return;if(started&&$('m').hidden){alive=false;return}started=true;const left=Math.ceil((end-Date.now())/1000);
+    if(left<=0){alive=false;closeSheet();playDone('두더지 잡기',`두더지 ${score}마리를 잡았어요`,Math.min(40,score*2),{fit:10});return}
+    mole=(mole+1+rnd(8))%9;show(left);setTimeout(tick,Math.max(550,900-score*15))};
+  const show=left=>sheet(`🐹 두더지 잡기 · ${left}초`,b=>{b.append(el('div','quiz',`잡은 두더지 ${score}마리`));const g=el('div','grid three molegrid');
+    for(let i=0;i<9;i++){const bt=mk(i===mole?'🐹':'🕳️','',()=>{if(i!==mole)return;score++;mole=-1;tone(523);show(Math.ceil((end-Date.now())/1000))},'mole'+(i===mole?' up':''));g.append(bt)}b.append(g)},'game');
+  tick()}
+function colorGame(){const C=[['#ff6b6b','빨강'],['#ffb648','주황'],['#ffe45c','노랑'],['#7bd97b','초록'],['#62b0ff','파랑'],['#b085ff','보라'],['#ff8fb0','분홍'],['#8a5a2f','갈색']];let round=0,right=0;
+  const show=msg=>{const ans=rnd(C.length),opts=shuffle([ans,...shuffle(C.map((_,i)=>i).filter(i=>i!==ans)).slice(0,3)]);
+    sheet(`🎨 같은 색 찾기 ${round+1} / 8`,b=>{const sw=el('div','cswatch');sw.style.background=C[ans][0];b.append(el('div','howdn','위와 같은 색 이름을 골라요!'),sw);const g=el('div','grid two-col');let lock=false;const m=el('div','qmsg',msg||'');
+      opts.forEach(i=>g.append(mk('',C[i][1],()=>{if(lock)return;lock=true;const ok=i===ans;if(ok){right++;tone(587)}m.textContent=ok?'딩동댕! 🎉':`정답은 ${C[ans][1]}이에요`;setTimeout(()=>{round++;if(round<8)show();else{closeSheet();playDone('같은 색 찾기',`8개 중 ${right}개 맞혔어요`,right*4,{smart:right*2})}},ok?600:1200)},'qbtn')));b.append(g,m)},'game')};
+  show()}
+function simonGame(){const P=[['#ff6b6b',262],['#62b0ff',330],['#ffe45c',392],['#7bd97b',523]];let seq=[],pos=0,level=0,lit=-1,busyS=false;
+  const show=msg=>sheet(`🔔 순서 기억하기 · ${level+1}단계`,b=>{b.append(el('div','howdn',busyS?'잘 보세요! 👀':'반짝인 순서대로 눌러요'));const g=el('div','grid two-col');
+    P.forEach(([c,fr],i)=>{const bt=mk('','',()=>{if(busyS)return;tone(fr);if(seq[pos]===i){pos++;if(pos>=seq.length){level++;if(level>=6){closeSheet();playDone('순서 기억하기','6단계까지 모두 기억했어요',40,{smart:15});return}setTimeout(next,500);show('잘했어요! 다음 단계 🎉')}}
+      else{closeSheet();playDone('순서 기억하기',`${level}단계까지 기억했어요`,level*6,{smart:level*2})}},'simon'+(lit===i?' lit':''));bt.style.background=c;g.append(bt)});b.append(g,el('div','qmsg',msg||''))},'game');
+  const next=()=>{seq.push(rnd(4));pos=0;busyS=true;let k=0;const step=()=>{if($('m').hidden&&k>0)return;if(k>=seq.length){lit=-1;busyS=false;show();return}lit=seq[k];tone(P[seq[k]][1]);show();setTimeout(()=>{lit=-1;show();k++;setTimeout(step,220)},480)};setTimeout(step,500)};
+  show();next()}
 function hideSeek(){
   let round=0,found=0;const spots=[['🌳','나무 뒤'],['📦','상자 안'],['🛋️','소파 밑'],['🌷','꽃밭'],['🚪','문 뒤']];
   const ic=(KINDS[st.kind]||['🐣'])[0];
@@ -1489,7 +1516,7 @@ function painting(){const w=busy();if(w)return say(w);
       eff({art:Math.min(50,15+n),learn:15,happy:8,energy:-4},10+Math.floor(n/6));bump(1);log('그림을 그렸어요');say('멋진 그림! 방에 걸어 둘게요 🖼️',4500);save();render();act('paint',3800)},'big'))})}
 const BOXES=[['🍽️ 먹기',[['🍙','밥','feed'],['🍭','간식','snack']]],
   ['🎀 꾸미기',[['💄','꾸미기','dress'],['🏠','집 꾸미기','dressHome']]],
-  ['🧼 돌보기',[['🫧','씻기','wash'],['🌙','재우기','sleep'],['🧹','청소','cleanRoom'],['💊','약','medicine'],['🏥','병원','hospital']]],
+  ['🧼 돌보기',[['🫧','씻기','wash'],['🌙','재우기','sleep'],['🧹','청소','cleanRoom'],['🏥','병원','clinic']]],
   ['🎈 놀고 배우기',[['🎈','놀기','playMenu'],['🏃','운동','exercise'],['📚','공부','study'],['🎨','취미','hobby']]]];
 /* ----- marriage between devices (4-digit code) ----- */
 const KIDX=Object.keys(KINDS),FIDX=Object.keys(FORMS);
