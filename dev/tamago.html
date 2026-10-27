@@ -47,8 +47,8 @@ button.alert{background:#ffd9df;box-shadow:0 5px 0 #f29aaa;animation:pulse 1s in
 .hearts b{color:var(--heart);font-weight:400}
 .info{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:.9rem;border-top:2px dashed var(--dot);padding-top:8px;margin-top:4px;font-variant-numeric:tabular-nums}
 .info .st{color:var(--star)}
-.modal{position:fixed;inset:0;background:rgba(69,48,79,.45);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
-.sheet{background:var(--card);border-radius:24px;padding:20px;width:min(340px,100%);max-height:88vh;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;text-align:center}
+.modal{position:fixed;inset:0;background:rgba(69,48,79,.45);display:flex;align-items:center;justify-content:center;padding:12px;z-index:5}
+.sheet{background:var(--card);border-radius:24px;padding:20px;width:min(340px,100%);max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;text-align:center}
 .sheet h2{margin:0;font-weight:400;font-size:1.4rem}
 .sheet h3{margin:4px 0 0;font-weight:400;font-size:1.05rem;color:var(--muted);text-align:left}
 .sheet input{font-family:var(--display);font-size:1.3rem;text-align:center;padding:10px;border:3px solid var(--dot);border-radius:14px;color:var(--text);background:#fff;outline:none}
@@ -127,6 +127,11 @@ body{gap:8px!important;padding-block:10px 20px!important}
 .care button.lb{font-size:1.02rem!important}.hearts{font-size:1.05rem!important;letter-spacing:1px!important}.info{font-size:.92rem!important}
 .more button{font-size:.9rem!important;padding:6px 0 5px!important}.more .ic{font-size:1.35rem!important}}
 .sheet{position:relative}
+.ctabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.ctabs button{flex-direction:column;padding:5px 0;font-size:.8rem}.ctabs.two{grid-template-columns:1fr 1fr}.dexg.four{grid-template-columns:repeat(4,1fr)!important;gap:5px!important}.dexg.four b{font-size:.68rem}.dexc.off canvas{filter:grayscale(1) brightness(1.15);opacity:.4}.dexc.off b,.dexc.off small{opacity:.45}
+.ctabs button.on{background:#ffe0d8;box-shadow:0 4px 0 var(--shell)}
+.dprevw{position:sticky;top:-20px;z-index:2;background:var(--card);margin:-6px -6px 0;padding:6px 6px 4px;border-radius:16px}
+.dprev{width:100%;max-height:32vh;object-fit:contain;border-radius:12px;display:block;image-rendering:pixelated;border:3px solid var(--dot);box-sizing:border-box}
+.dprevt{font-size:.8rem;color:var(--muted);margin-top:3px}
 .xbtn{position:sticky;top:-8px;align-self:flex-end;margin:-10px -8px -40px 0;width:38px;height:38px;border-radius:50%;padding:0;font-size:1.15rem;flex-direction:row;justify-content:center;background:var(--page);box-shadow:0 3px 0 var(--dot);z-index:3}
 .topr{display:flex;align-items:center;gap:8px}
 .school{flex-direction:row;font-size:.85rem;padding:5px 10px;background:#e8f4ff;box-shadow:0 3px 0 #a9cdf2;border-radius:999px}.school.on{background:#fff1b8;box-shadow:0 3px 0 #f2c14e}
@@ -689,7 +694,13 @@ function idleTalk(){
 }
 
 /* ---------- sheets ---------- */
-function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=!!noClose;if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0}
+function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=!!noClose;if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
+function fitSheet(){const sh=$('m').querySelector('.sheet');if(!sh||$('m').hidden)return;sh.style.zoom='';sh.style.width='';sh.style.maxHeight='';if(innerWidth>600)return;const r=sh.clientHeight/sh.scrollHeight;if(r<1){const z=Math.max(.62,r-.01);sh.style.zoom=z;sh.style.width=Math.min(340,innerWidth-24)/z+'px';sh.style.maxHeight=(innerHeight-24)/z+'px'}}
+function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600)return;
+  const over0=()=>document.documentElement.scrollHeight-innerHeight;
+  for(let k=0;k<3;k++){const over=over0();if(over<=1)break;bz.style.setProperty('width',Math.max(180,bz.offsetWidth-over*1.34-2)+'px','important')}
+  const ov=over0();if(ov>1&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.78,(h-ov-2)/h)}if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
+window.addEventListener('resize',()=>{fitScreen();fitSheet()});
 function closeSheet(){$('m').hidden=true}
 $('mX').onclick=closeSheet;$('mXX').onclick=closeSheet;
 function mk(ic,lb,fn,cls){const b=document.createElement('button');b.innerHTML=`<span class="ic">${ic}</span>${lb}`;b.onclick=fn;if(cls)b.className=cls;return b}
@@ -836,9 +847,16 @@ $('reset').onclick=()=>sheet('정말 처음부터 할까요?',b=>{
 function diary(){sheet(`${st.name||'우리'} 육아일기`,b=>{
   if(!st.diary.length){b.append(el('div',null,'아직 일기가 없어요. 알을 깨워 보세요!'));return}
   const d=el('div','diary');st.diary.slice().reverse().forEach(e=>{const r=el('div');r.append(el('b',null,e.d),el('span',null,e.t));d.append(r)});b.append(d)})}
-function dex(){sheet('어른 모습 도감',b=>{
-  b.append(el('div',null,`찾은 모습 ${st.found.length} / ${Object.keys(FORMS).length}`));
-  const d=el('div','dexg');Object.entries(FORMS).forEach(([k,[ic,n,hint]])=>{const has=st.found.includes(k);const r=el('div','dexc'+(has?'':' q'));r.append(formThumb(k,!has),el('b',null,has?`${ic} ${n}`:'???'),el('small',null,has?hint:hint));d.append(r)});b.append(d);
+let dexTab='kind';
+function kindsFound(){const f=new Set();if(st.hatched&&st.kind)f.add(st.kind);(st.album||[]).forEach(x=>x.kind&&f.add(x.kind));
+  [0,1,2,3].forEach(i=>{if(i===SLOT)return;try{const d=slotData(i);if(d&&d.hatched&&d.kind)f.add(d.kind);(d&&d.album||[]).forEach(x=>x.kind&&f.add(x.kind))}catch(e){}});return f}
+function dex(){sheet('📖 도감',b=>{
+  const tb=el('div','ctabs two');[['kind','🐾','친구 도감'],['form','👑','어른 모습']].forEach(([k,ic,n])=>tb.append(mk(ic,n,()=>{dexTab=k;dex()},dexTab===k?'on':'')));b.append(tb);
+  if(dexTab==='kind'){const f=kindsFound(),all=GROUPS.flatMap(g=>g[1]);
+    b.append(el('div','howdn',`키워 본 친구 ${all.filter(k=>f.has(k)).length} / ${all.length} · 키워 본 친구만 색이 켜져요`));
+    const d=el('div','dexg four');all.forEach(k=>{const has=f.has(k),r=el('div','dexc'+(has?'':' off'));r.append(petThumb({kind:k,stage:4,gender:'girl'},60,48),el('b',null,KINDS[k][1]));d.append(r)});b.append(d)}
+  else{b.append(el('div','howdn',`찾은 모습 ${st.found.length} / ${Object.keys(FORMS).length} · 찾은 모습만 색이 켜져요`));
+  const d=el('div','dexg');Object.entries(FORMS).forEach(([k,[ic,n,hint]])=>{const has=st.found.includes(k);const r=el('div','dexc'+(has?'':' off'));r.append(formThumb(k,false),el('b',null,`${ic} ${n}`),el('small',null,hint));d.append(r)});b.append(d)}
   if(st.album.length){b.append(el('h3',null,'추억 앨범'));const a=el('div','dex');st.album.forEach(x=>{const r=el('div');r.append(el('span',null,KINDS[x.kind]?KINDS[x.kind][0]:'🐣'),el('span',null,`${x.gen}대째 ${x.name} · ${FORMS[x.form]?FORMS[x.form][1]:''} · ${x.days}일`));a.append(r)});b.append(a)}
   if(stage()===4){
     if(growMin()>=GROW[3]+30)b.append(mk('🥚','동생 알 받기',nextGen,'big'),el('div',null,'지금 친구는 추억 앨범에 남고, 골드와 물건은 그대로예요'));
@@ -924,10 +942,25 @@ const SIDE=[['🍳','계란말이','p'],['🥩','불고기','p'],['🐟','생선
  ['🥬','시금치나물','v'],['🌱','콩나물무침','v'],['🥒','오이무침','v'],['🥦','브로콜리','v'],['🌶️','김치','v'],['🟧','깍두기','v'],
  ['🐡','멸치볶음','c'],['🟩','구운 김','c'],['🥔','감자조림','c']];
 const FAV={cat:'생선구이',dog:'불고기',rabbit:'시금치나물',bear:'계란말이',chick:'콩나물무침',owl:'멸치볶음',penguin:'생선구이',fish:'구운 김',octopus:'구운 김',turtle:'브로콜리',flamebean:'불고기',dropling:'오이무침',sprout:'시금치나물',starfluff:'계란말이',cloudsheep:'감자조림',candybear:'계란말이',macaroncat:'생선구이',jellyfish:'구운 김',chestnut:'감자조림',unicorn:'계란말이'};
+const CUIS=[['🍚','한식'],['🥟','중식'],['🍝','양식'],['🍜','아시안']];
+const DISH={중식:[['🍜','짜장면','x'],['🌶️','짬뽕','b'],['🍖','탕수육','x'],['🍳','볶음밥','b'],['🥟','물만두','b'],['🥚','계란탕','v']],
+ 양식:[['🍝','토마토 스파게티','b'],['🍕','피자','x'],['🍔','햄버거','x'],['🥩','돈가스','x'],['🍛','오므라이스','b'],['🥗','샐러드','v'],['🥣','크림수프','b']],
+ 아시안:[['🍣','초밥','b'],['🍜','쌀국수','b'],['🍛','카레라이스','b'],['🥢','팟타이','b'],['🍙','주먹밥','b'],['🍤','튀김우동','x'],['🥟','딤섬','b']]};
+let cuis='한식';
+function cuisTabs(b,redraw){const r=el('div','ctabs');CUIS.forEach(([ic,n])=>r.append(mk(ic,n,()=>{cuis=n;redraw()},cuis===n?'on':'')));b.append(r)}
+function dishSheet(){sheet('🍙 밥 먹기',b=>{cuisTabs(b,()=>cuis==='한식'?feed():dishSheet());
+  b.append(el('div','howdn','먹고 싶은 요리를 하나 골라요 · 🥗은 몸에 좋아요, 🍟 표시는 맛있지만 기름져요'));
+  const g=el('div','grid meal');DISH[cuis].forEach(([ic,n,t])=>g.append(mk(ic,`${n}${t==='x'?'<br><small>🍟</small>':t==='v'?'<br><small>🥗</small>':''}`,()=>{closeSheet();eatDish(ic,n,t)})));b.append(g)})}
+function eatDish(ic,n,t){
+  eff({hunger:45,water:/국|탕|짬뽕|우동|쌀국수|수프/.test(n)?15:0,energy:5,health:t==='v'?10:t==='b'?6:-2,happy:t==='x'?14:6});
+  fx={t:'eat',s:Date.now(),d:1800};st.teeth=(st.teeth||0)+1;bump(t==='x'?1:2);
+  if(!st.poopAt&&st.poop<3)st.poopAt=Date.now()+(180+Math.random()*180)*1000;
+  log(`${cuis}: ${n}`);say(t==='x'?`${ic} ${n} 너무 맛있어요! 다음엔 채소도 먹을래요`:t==='v'?`${ic} ${n}! 몸이 가벼워져요 🥗`:`${ic} ${n} 냠냠, 잘 먹었습니다!`,4500);save();render()}
 function feed(){
   if(st.hunger>=95)return say('배불러요! 이제 그만~');
+  if(cuis!=='한식')return dishSheet();
   const pick={rice:null,soup:null,sides:[]};const fav=FAV[st.kind]||'계란말이';
-  const draw2=()=>sheet('🍙 식단 짜기',b=>{
+  const draw2=()=>sheet('🍙 밥 먹기',b=>{cuisTabs(b,()=>cuis==='한식'?draw2():dishSheet());
     b.append(el('div','howdn',`${st.name}가 좋아하는 반찬: ${fav} · 반찬은 3개까지`));
     const sec=(title,list,key,multi)=>{b.append(el('h3',null,title));const g=el('div','grid meal');
       list.forEach(([ic,n])=>{const on=multi?pick.sides.includes(n):pick[key]===n;
@@ -1139,14 +1172,19 @@ function shop(){
         if(own)btn.classList.add('on');g.append(btn)});b.append(g)})})}
 const DRESS={pet:['💄 꾸미기',['head','face','neck','makeup'],'머리·얼굴·목·화장을 꾸며요'],home:['🏠 집 꾸미기',['bg','wall','floor','furn'],'배경을 "우리 방"으로 두면 벽지·바닥·가구가 보여요']};
 let pendingBuy=null;
+function dressPreview(){const cv=$('cv'),c=document.createElement('canvas');c.className='dprev';c.width=cv.width;c.height=cv.height;
+  const sv=st.wear,t=pendingBuy&&ITEMS[pendingBuy];st.wear=Object.assign({},sv,{furn:[...(sv.furn||[])]});
+  if(t){if(t.slot==='furn'){if(!st.wear.furn.includes(pendingBuy))st.wear.furn.push(pendingBuy)}else st.wear[t.slot]=pendingBuy}
+  try{draw();c.getContext('2d').drawImage(cv,0,0)}catch(e){}st.wear=sv;try{draw()}catch(e){}
+  const w=el('div','dprevw');w.append(c,el('div','dprevt',t?`👀 ${t.n} 입어 보는 중 · 한 번 더 누르면 사요 (🪙${t.p})`:'✨ 지금 내 모습'));return w}
 function dressOf(cat){
-  const [title,slots,tip]=DRESS[cat];
+  const [title,slots,tip]=DRESS[cat];const sh=$('m').querySelector('.sheet'),keep=$('m').hidden?0:sh.scrollTop;
   sheet(title,b=>{
-    b.append(el('div','stars',`내 골드 🪙 ${st.gold}`),el('div','howdn',`가진 건 눌러서 쓰고 빼요 · 안 가진 건 두 번 누르면 사요 · ${tip}`));
+    b.append(dressPreview(),el('div','stars',`내 골드 🪙 ${st.gold}`),el('div','howdn',`눌러 보면 위 그림에 바로 보여요 · 안 가진 건 한 번 더 누르면 사요 · ${tip}`));
     if(cat==='home'){const g=el('div','grid three');const on=!st.wear.bg;const bt=mk('🏠','우리 방',()=>{st.wear.bg=null;save();dressOf(cat)},on?'on':'');b.append(el('h3',null,'배경'));g.append(bt);
       Object.entries(ITEMS).filter(([,it])=>it.slot==='bg').forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g)}
     slots.filter(sl=>sl!=='bg').forEach(sl=>{b.append(el('h3',null,SLOTS[sl]));const g=el('div','grid three');
-      Object.entries(ITEMS).filter(([,it])=>it.slot===sl&&it.p>0).forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g)})})}
+      Object.entries(ITEMS).filter(([,it])=>it.slot===sl&&it.p>0).forEach(([id,it])=>g.append(itemBtn(cat,id,it)));b.append(g)})});sh.scrollTop=keep;fitSheet()}
 function itemBtn(cat,id,it){
   const own=st.own.includes(id),sl=it.slot,on=sl==='furn'?st.wear.furn.includes(id):st.wear[sl]===id;
   const sub=own?(on?'쓰는 중':'가지고 있어요'):(pendingBuy===id?'한 번 더 누르면 사요!':'🪙 '+it.p);
@@ -1265,7 +1303,8 @@ setInterval(()=>{
   if(f%20===0)save();
   if(now>sayUntil&&f%3===0){if(st.hatched&&Math.random()<.25)idleTalk();else if(st.hatched)$('say').style.opacity=0}
 },280);
-render();draw();
+{const _rd=render;render=function(){_rd.apply(this,arguments);fitScreen()}}
+render();draw();setTimeout(fitScreen,300);
 if(st.lock&&!unlockedHere(SLOT))lockScreen();
 else if(st.hatched&&(!st.name||!st.kind||!st.gender))askName();
 else if(st.hatched)setTimeout(idleTalk,600);
