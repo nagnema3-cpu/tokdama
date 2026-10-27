@@ -306,7 +306,7 @@ function paintShell(){const c=SHELLS[st.shell]||SHELLS.coral,t=document.querySel
 function save(){st.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}if(typeof cloudSoon==='function')cloudSoon()}
 const clamp=v=>Math.max(0,Math.min(100,v));
 const growMin=()=>(st.grow||0)/60+st.points*.3;
-const GROW=[0,25,75,165];
+const GROW=[0,14,41,90];
 const stage=()=>{if(!st.hatched)return 0;const g=growMin();return g<GROW[1]?1:g<GROW[2]?2:g<GROW[3]?3:4};
 const STG=['알','아기','어린이','청소년','어른'];
 let prev=Date.now(),fx=null,game=null,f=0,petX=36,petTo=36,lastPet=0,sayUntil=0,lastStage=stage();
