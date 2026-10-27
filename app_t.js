@@ -6,6 +6,7 @@ const NS=USER?'u-'+USER:'guest';
 const cleanId=s=>String(s||'').trim().toLowerCase().replace(/[.#$\[\]\/\s]/g,'').slice(0,12);
 async function api(path,method,body){if(!DB)throw new Error('nodb');const r=await fetch(`${DB}/tokdama/${path}.json`,{method:method||'GET',headers:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});if(!r.ok)throw new Error('http '+r.status);return r.json()}
 
+const APPVER='10.27-23시';
 let SLOT=0;try{SLOT=Math.min(3,Math.max(0,+localStorage.getItem('tokdama-slot-'+NS)||0))}catch(e){}
 const slotKey=i=>'tokdama-'+NS+'-s'+i;
 const KEY=slotKey(SLOT);
@@ -1303,7 +1304,7 @@ else if(DB){(async()=>{try{const pn=await api(`users/${USER}/pin`);if(pn==null){
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')goAway();else comeBackOnline()});
   window.addEventListener('pagehide',goAway);
   const _cs=charSheet;window._locks={};charSheet=async function(){try{const u=await api(`users/${USER}`)||{};const sl=u.slots||{};[0,1,2,3].forEach(i=>{if(i===SLOT||!sl[i])return;const l=slotData(i);if(!l||(sl[i].last||0)>(l.last||0))localStorage.setItem(slotKey(i),JSON.stringify(sl[i]))});window._locks=u.locks||{}}catch(e){}_cs()};$('chars').onclick=()=>charSheet()}
-cloudStatus(USER?(DB?`☁️ ${USER}`:`📱 ${USER} (이 기기 저장)`):'');
+cloudStatus(USER?(DB?`☁️ ${USER}`:`📱 ${USER} (이 기기 저장)`):'');{const v=document.createElement('div');v.className='cloudst';v.id='appver';v.textContent='버전 '+APPVER;const cs=document.getElementById('cloudst');if(cs)cs.after(v)}
 
 if(USER&&st.lock&&!unlockedHere(SLOT))lockScreen();
 else if(USER&&st.hatched&&(!st.name||!st.kind||!st.gender))askName();

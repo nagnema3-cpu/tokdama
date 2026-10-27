@@ -5,7 +5,7 @@ def R(a,b,n=1):
     assert s.count(a)==n,(a[:80],s.count(a))
     s=s.replace(a,b)
 R('<title>톡톡 다마고치</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n',"")
-i=s.rindex("</script>");s=s[:i]+"</script>\n<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})</script>\n</body>\n</html>\n"
+i=s.rindex("</script>");s=s[:i]+"</script>\n<script>if('serviceWorker' in navigator){let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(rl)return;rl=true;location.reload()});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')r.update()})}).catch(()=>{})}</script>\n</body>\n</html>\n"
 head='''<!doctype html>
 <html lang="ko">
 <head>
@@ -25,7 +25,7 @@ head='''<!doctype html>
 '''
 s=head+s
 R("let SLOT=0;try{SLOT=Math.min(3,Math.max(0,+localStorage.getItem('tokdama-slot')||0))}catch(e){}\nconst slotKey=i=>i?'tokdama-v2-s'+i:'tokdama-v2';",
-  open(os.path.join(os.path.dirname(__file__),'cloud_pre.js')).read()+"\nlet SLOT=0;try{SLOT=Math.min(3,Math.max(0,+localStorage.getItem('tokdama-slot-'+NS)||0))}catch(e){}\nconst slotKey=i=>'tokdama-'+NS+'-s'+i;")
+  open(os.path.join(os.path.dirname(__file__),'cloud_pre.js')).read()+"\nconst APPVER='10.27-23시';\nlet SLOT=0;try{SLOT=Math.min(3,Math.max(0,+localStorage.getItem('tokdama-slot-'+NS)||0))}catch(e){}\nconst slotKey=i=>'tokdama-'+NS+'-s'+i;")
 R("try{saved=JSON.parse(localStorage.getItem(KEY)||(SLOT?null:localStorage.getItem('tokdama-v1')))}catch(e){}","try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}")
 R("localStorage.setItem('tokdama-slot',String(i))","localStorage.setItem('tokdama-slot-'+NS,String(i))")
 R("function save(){st.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}","function save(){st.last=Date.now();try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}if(typeof cloudSoon==='function')cloudSoon()}")
