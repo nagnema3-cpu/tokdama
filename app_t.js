@@ -728,7 +728,7 @@ function idleTalk(){
 }
 
 /* ---------- sheets ---------- */
-function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=false;xMode=noClose||'';xBack=null;if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
+function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=false;xMode=noClose||'';xBack=null;if(!exitOpen)arm();if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
 function fitSheet(){const sh=$('m').querySelector('.sheet');if(!sh||$('m').hidden)return;sh.style.zoom='';sh.style.width='';sh.style.maxHeight='';if(innerWidth>600)return;const r=sh.clientHeight/sh.scrollHeight;if(r<1){const z=Math.max(.62,r-.01);sh.style.zoom=z;sh.style.width=Math.min(340,innerWidth-24)/z+'px';sh.style.maxHeight=(innerHeight-24)/z+'px'}}
 function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600){if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}return}
   const last=()=>{let b=0;document.querySelectorAll('header.top,main.layout>*').forEach(e=>{if(e.offsetParent){const r=e.getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom+scrollY)}});return b+8};
@@ -737,22 +737,24 @@ function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.query
   const ov=last()-innerHeight;if(ov>2&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.8,(h-ov-2)/h)}
   if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
 window.addEventListener('resize',()=>{fitScreen();fitSheet()});
-function closeSheet(){$('m').hidden=true}
+function closeSheet(){$('m').hidden=true;exitOpen=false}
 let xMode='',xBack=null,hPushed=false,backAt=0;
 function xClose(){const t=$('mT').textContent;if(xBack){const f=xBack;xBack=null;f();return}
   if(xMode==='game'){quitSheet();return}
   if(locked){if(t.startsWith('👥'))return (typeof owner!=='undefined'&&!owner&&typeof busySlot==='function')?busySlot():lockScreen();return charSheet()}
   closeSheet()}
 $('mX').onclick=xClose;$('mXX').onclick=xClose;
-let exitArmed=0,ignorePop=false;
-function exitSheet(){sheet('👋 앱을 끌까요?',b=>{b.append(el('div','howdn',`${st.name||'친구'}는 그대로 저장돼요. 다음에 또 만나요!`));const r=el('div','grid two-col');
-  r.append(mk('🚪','종료하기',()=>{try{save();if(typeof pushNow==='function')pushNow()}catch(e){}closeSheet();try{window.close()}catch(e){}
-    say('👋 뒤로가기를 한 번 더 누르면 꺼져요',5000);if(hPushed){ignorePop=true;hPushed=false;history.back()}exitArmed=Date.now();
-    setTimeout(()=>{exitArmed=0;if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}},5000)},'big'),mk('🎮','계속 놀기',closeSheet,'big'));b.append(r)})}
+let exitArmed=0,ignorePop=false,exitOpen=false;
+function arm(){if(hPushed||exitArmed||exitOpen)return;try{history.pushState({tk:1},'');hPushed=true}catch(e){}}
+function exitSheet(){exitOpen=true;sheet('👋 앱을 끌까요?',b=>{b.append(el('div','howdn',`${st.name||'친구'}는 그대로 저장돼요. 다음에 또 만나요!`));const r=el('div','grid two-col');
+  r.append(mk('🚪','종료하기',()=>{try{save();if(typeof pushNow==='function')pushNow()}catch(e){}exitArmed=1;closeSheet();exitOpen=false;try{window.close()}catch(e){}byeShow()},'big'),mk('🎮','계속 놀기',()=>{exitOpen=false;closeSheet();arm()},'big'));b.append(r)})}
+function byeShow(){let c=$('bye');if(!c){c=document.createElement('div');c.id='bye';c.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff8ec;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:22px;text-align:center;padding:20px';c.innerHTML='<div style="font-size:64px">👋</div><b>잘 가요! 또 만나요</b><div style="font-size:16px;opacity:.7">뒤로가기를 누르면 꺼져요<br>(화면을 누르면 다시 놀 수 있어요)</div>';c.onclick=()=>{byeHide();arm()};document.body.append(c)}c.hidden=false;c.style.display='flex'}
+function byeHide(){exitArmed=0;const c=$('bye');if(c)c.style.display='none'}
 window.addEventListener('popstate',()=>{if(ignorePop){ignorePop=false;return}hPushed=false;if(exitArmed)return;
-  if(!$('m').hidden)xClose();else exitSheet();
-  if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}});
-try{history.pushState({tk:1},'');hPushed=true}catch(e){}
+  if(!$('m').hidden&&!exitOpen)xClose();else if(!exitOpen)exitSheet()});
+['pointerdown','keydown'].forEach(t=>window.addEventListener(t,()=>{if(!exitArmed)arm()},true));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&exitArmed){byeHide()}});
+window.addEventListener('pageshow',()=>{byeHide();exitOpen=false});
 function mk(ic,lb,fn,cls){const b=document.createElement('button');b.innerHTML=`<span class="ic">${ic}</span>${lb}`;b.onclick=fn;if(cls)b.className=cls;return b}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 
