@@ -943,12 +943,13 @@ const SIDE=[['🍳','계란말이','p'],['🥩','불고기','p'],['🐟','생선
  ['🐡','멸치볶음','c'],['🟩','구운 김','c'],['🥔','감자조림','c']];
 const FAV={cat:'생선구이',dog:'불고기',rabbit:'시금치나물',bear:'계란말이',chick:'콩나물무침',owl:'멸치볶음',penguin:'생선구이',fish:'구운 김',octopus:'구운 김',turtle:'브로콜리',flamebean:'불고기',dropling:'오이무침',sprout:'시금치나물',starfluff:'계란말이',cloudsheep:'감자조림',candybear:'계란말이',macaroncat:'생선구이',jellyfish:'구운 김',chestnut:'감자조림',unicorn:'계란말이'};
 const CUIS=[['🍚','한식'],['🥟','중식'],['🍝','양식'],['🍜','아시안']];
-const DISH={중식:[['🍜','짜장면','x'],['🌶️','짬뽕','b'],['🍖','탕수육','x'],['🍳','볶음밥','b'],['🥟','물만두','b'],['🥚','계란탕','v']],
+const DISH={한식:[['🌶️','떡볶이','x'],['🍲','김치찌개','b'],['🌭','부대찌개','x'],['🥓','삼겹살','x'],['🥗','비빔밥','v'],['🥩','불고기','b'],['🍙','김밥','b'],['🫘','된장찌개','v'],['🍜','잡채','b'],['🍗','치킨','x']],
+ 중식:[['🍜','짜장면','x'],['🌶️','짬뽕','b'],['🍖','탕수육','x'],['🍳','볶음밥','b'],['🥟','물만두','b'],['🥚','계란탕','v']],
  양식:[['🍝','토마토 스파게티','b'],['🍕','피자','x'],['🍔','햄버거','x'],['🥩','돈가스','x'],['🍛','오므라이스','b'],['🥗','샐러드','v'],['🥣','크림수프','b']],
  아시안:[['🍣','초밥','b'],['🍜','쌀국수','b'],['🍛','카레라이스','b'],['🥢','팟타이','b'],['🍙','주먹밥','b'],['🍤','튀김우동','x'],['🥟','딤섬','b']]};
 let cuis='한식';
 function cuisTabs(b,redraw){const r=el('div','ctabs');CUIS.forEach(([ic,n])=>r.append(mk(ic,n,()=>{cuis=n;redraw()},cuis===n?'on':'')));b.append(r)}
-function dishSheet(){sheet('🍙 밥 먹기',b=>{cuisTabs(b,()=>cuis==='한식'?feed():dishSheet());
+function dishSheet(){sheet('🍙 밥 먹기',b=>{cuisTabs(b,dishSheet);
   b.append(el('div','howdn','먹고 싶은 요리를 하나 골라요 · 🥗은 몸에 좋아요, 🍟 표시는 맛있지만 기름져요'));
   const g=el('div','grid meal');DISH[cuis].forEach(([ic,n,t])=>g.append(mk(ic,`${n}${t==='x'?'<br><small>🍟</small>':t==='v'?'<br><small>🥗</small>':''}`,()=>{closeSheet();eatDish(ic,n,t)})));b.append(g)})}
 function eatDish(ic,n,t){
@@ -958,7 +959,7 @@ function eatDish(ic,n,t){
   log(`${cuis}: ${n}`);say(t==='x'?`${ic} ${n} 너무 맛있어요! 다음엔 채소도 먹을래요`:t==='v'?`${ic} ${n}! 몸이 가벼워져요 🥗`:`${ic} ${n} 냠냠, 잘 먹었습니다!`,4500);save();render()}
 function feed(){
   if(st.hunger>=95)return say('배불러요! 이제 그만~');
-  if(cuis!=='한식')return dishSheet();
+  return dishSheet();
   const pick={rice:null,soup:null,sides:[]};const fav=FAV[st.kind]||'계란말이';
   const draw2=()=>sheet('🍙 밥 먹기',b=>{cuisTabs(b,()=>cuis==='한식'?draw2():dishSheet());
     b.append(el('div','howdn',`${st.name}가 좋아하는 반찬: ${fav} · 반찬은 3개까지`));
