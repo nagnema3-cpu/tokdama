@@ -364,8 +364,13 @@ function vPet(g,o){
     if(kind==='sick'){path(()=>{g.moveTo(x-ew*.8,ey-ew*.8);g.lineTo(x+ew*.8,ey+ew*.8);g.moveTo(x+ew*.8,ey-ew*.8);g.lineTo(x-ew*.8,ey+ew*.8)});g.stroke();return}
     ell(x,ey,ew,eh,VEYE,false);const gr=g.createLinearGradient(0,ey,0,ey+eh);gr.addColorStop(0,'rgba(140,110,200,0)');gr.addColorStop(1,'rgba(160,130,230,.55)');ell(x,ey+eh*.25,ew*.85,eh*.7,gr,false);
     if(kind==='star')star(x-ew*.25,ey-eh*.35,ew*.75,'#ffe45c');else ell(x-ew*.3,ey-eh*.38,ew*.42,ew*.42,'#ffffff',false);ell(x+ew*.35,ey+eh*.35,ew*.2,ew*.2,'#ffffff',false)};
-  eye(Lx,ek);eye(Rx,(ply&&ek==='open')?'happy':ek);
-  if(o.mood==='sad'&&!o.asleep&&!o.sick)ell(Lx-ew*.6,ey+eh+1+(o.f%2)*.6,.5,.8,'#8fc8ff',false);
+  const awake=!o.asleep&&!o.sick,wor=awake&&o.mood==='worry',cry=awake&&o.mood==='cry';
+  if(cry){g.strokeStyle=VEYE;g.lineWidth=.9;[[Lx,1],[Rx,-1]].forEach(([x,d])=>{path(()=>{g.moveTo(x-ew,ey-eh*.35);g.quadraticCurveTo(x,ey+eh*.25,x+ew,ey-eh*.35)});g.stroke()});
+    [Lx,Rx].forEach((x,i)=>{const t=(o.f+i)%2;path(()=>{g.moveTo(x-ew*.6,ey+.2);g.quadraticCurveTo(x-ew*.9,ey+eh*1.2,x-ew*.5,ey+eh*1.7+t*.6);g.quadraticCurveTo(x-ew*.1,ey+eh*1.2,x-ew*.3,ey+.2);g.closePath()});g.fillStyle='rgba(120,190,255,.85)';g.fill()})}
+  else{eye(Lx,wor&&ek==='happy'?'open':ek);eye(Rx,(ply&&ek==='open')?'happy':wor&&ek==='happy'?'open':ek)}
+  if(wor||cry){g.strokeStyle=VL;g.lineWidth=.7;[[Lx,1],[Rx,-1]].forEach(([x,d])=>{path(()=>{g.moveTo(x-d*ew*1.1,ey-eh-.5);g.lineTo(x+d*ew*.6,ey-eh-1.6)});g.stroke()});g.lineWidth=.75}
+  if(wor){const sx=Rx+ew+1.6,sy=ey-eh-1+(o.f%2)*.4;path(()=>{g.moveTo(sx,sy-1.4);g.quadraticCurveTo(sx+1,sy,sx,sy+.5);g.quadraticCurveTo(sx-1,sy,sx,sy-1.4)});g.fillStyle='#9fd6ff';g.fill();g.strokeStyle='#5aa9e6';g.lineWidth=.3;g.stroke();g.lineWidth=.75}
+  if(o.mood==='sad'&&awake)ell(Lx-ew*.6,ey+eh+1+(o.f%2)*.6,.5,.8,'#8fc8ff',false);
   const cy2=ey+eh+.6,ck=sec?['#ffb3b3','#bfe0ff']:[P.e,P.e];
   [[Lx-ew-1.1,0],[Rx+ew+1.1,1]].forEach(([x,i])=>{g.globalAlpha=.75;ell(x,cy2,1.5+s*.3,.9+s*.12,ck[i],false);g.globalAlpha=1});
   if(eat)[[Lx-ew-1.1],[Rx+ew+1.1]].forEach(([x])=>{g.globalAlpha=.6;ell(x,cy2,2.2,1.2,'#ff8fa8',false);g.globalAlpha=1});
@@ -375,9 +380,11 @@ function vPet(g,o){
   if((k==='bear'||k==='dog')&&!sec&&s>=2){ell(mx,my+.6,2+s*.35,1.4+s*.2,P.l,false);ell(mx,my-.3,.7,.5,VL,false)}
   g.strokeStyle=VL;g.lineWidth=.7;
   if(bird){const bw=1+s*.2;path(()=>{g.moveTo(mx-bw,my-.5);g.lineTo(mx+bw,my-.5);g.lineTo(mx,my+(o.eating?1.8:.8+s*.25));g.closePath()});g.fillStyle='#ffa94d';g.fill();g.stroke();if(k==='chick'&&s===4)ell(mx,my+2.1,.7,.9,'#ff7a8a')}
-  else if(s===1&&!o.eating&&!o.asleep){ell(mx,my+.6,1.2,.9,'#ffc2d6');ell(mx,my+.6,.45,.35,'#ffffff',false)}
+  else if(s===1&&!o.eating&&!o.asleep&&o.mood!=='cry'){ell(mx,my+.6,1.2,.9,o.gender==='boy'?'#a9d4ff':'#ffc2d6');ell(mx,my+.6,.45,.35,'#ffffff',false)}
   else if(o.eating){ell(mx,my+.8,1,.9,'#c0566f')}
   else if(o.asleep){path(()=>{g.moveTo(mx-.6,my+.5);g.lineTo(mx+.6,my+.5)});g.stroke()}
+  else if(o.mood==='cry'){path(()=>g.ellipse(mx,my+1,1.3,1.1+(o.f%2)*.25,0,0,Math.PI*2));g.fillStyle='#c0566f';g.fill();g.stroke();ell(mx,my+1.6,.7,.35,'#ff9fb5',false)}
+  else if(o.mood==='worry'){path(()=>{g.moveTo(mx-1.3,my+.9);g.quadraticCurveTo(mx-.65,my+.3,mx,my+.9);g.quadraticCurveTo(mx+.65,my+1.5,mx+1.3,my+.9)});g.stroke()}
   else if(o.mood==='sad'||o.sick){path(()=>{g.moveTo(mx-1,my+1.2);g.quadraticCurveTo(mx,my,mx+1,my+1.2)});g.stroke()}
   else if(ply){path(()=>{g.moveTo(mx-1.2,my+.2);g.quadraticCurveTo(mx,my+1.2,mx+1.2,my+.2)});g.stroke();ell(mx+.4,my+1.1,.7,.8,'#ff8fae',false)}
   else{path(()=>{g.moveTo(mx-1.4,my+.1);g.quadraticCurveTo(mx-.7,my+1,mx,my+.2);g.quadraticCurveTo(mx+.7,my+1,mx+1.4,my+.1)});g.stroke()}
@@ -385,6 +392,10 @@ function vPet(g,o){
   if(W.makeup==='lips'&&!o.asleep&&!bird)ell(mx,my+.7,.9,.6,'#ff4f7a',false);
   if(W.makeup==='blush'&&!o.asleep)[Lx-ew-1.1,Rx+ew+1.1].forEach(x=>heart(x,cy2-.3,1.2,'#ff6fa0'));
   if(W.makeup==='sparkle'&&!o.asleep)[Lx-ew-1.6,Rx+ew+1.6].forEach((x,i)=>star(x,ey-eh-.6,(o.f+i)%2?1:.6,'#ffd84d'));
+  // gender marks
+  if(o.gender==='girl'&&!o.asleep&&ek!=='happy'&&!cry){g.strokeStyle=VEYE;g.lineWidth=.55;[[Lx,-1],[Rx,1]].forEach(([x,d])=>{path(()=>{g.moveTo(x+d*ew*.8,ey-eh*.55);g.lineTo(x+d*(ew+.9),ey-eh*.85)});g.stroke()});g.lineWidth=.75}
+  if(o.gender==='girl'&&s>=2&&!W.head){const rx0=hx+hrx*.62,ry0=top+1.4,z=.9+s*.2;[-1,1].forEach(d=>{path(()=>{g.moveTo(rx0,ry0);g.lineTo(rx0+d*2.2*z,ry0-1.3*z);g.lineTo(rx0+d*2.2*z,ry0+1.3*z);g.closePath()});fillS('#ff7fae')});ell(rx0,ry0,.75*z,.75*z,'#ff5a92')}
+  if(o.gender==='boy'&&s>=2&&!W.neck){const bx=hx,by=body?body.cy-body.ry+.8:Math.min(hy+hry*.86,-1.6),z=.8+s*.16;[-1,1].forEach(d=>{path(()=>{g.moveTo(bx,by);g.lineTo(bx+d*2*z,by-1.2*z);g.lineTo(bx+d*2*z,by+1.2*z);g.closePath()});fillS('#4f9dff')});ell(bx,by,.7*z,.7*z,'#2f7fe0')}
   // stage extras
   if(s===1){path(()=>{g.ellipse(hx,top+2.2,hrx*.78,3,0,Math.PI,0);g.lineTo(hx+hrx*.78,top+2.2);for(let i=6;i>=0;i--)g.lineTo(hx-hrx*.78+i*(hrx*1.56/6),top+2.2+(i%2?1.2:0))});fillS('#ffffff')}
   const NOLIMB=['fish','octopus','jellyfish','dropling'].includes(k);
@@ -473,7 +484,9 @@ function mood(){
   if(fx&&(fx.t==='heart'||fx.t==='eat'||fx.t==='bubble'))return 'happy';
   if(game&&game.res)return game.res;
   if(game&&game.type==='catch')return 'happy';
-  if(low()<25||st.poop>1)return 'sad';
+  if(low()<30)return 'cry';
+  if(low()<50)return 'worry';
+  if(st.poop>1)return 'sad';
   return avg()>65?'happy':'normal';
 }
 function fitCanvas(){const r=cv.getBoundingClientRect();if(!r.width)return;const dpr=window.devicePixelRatio||1,sc=Math.max(2,Math.round(r.width*dpr/72));if(cv.width!==72*sc){cv.width=72*sc;cv.height=54*sc}}
@@ -538,7 +551,7 @@ function idleTalk(){
 }
 
 /* ---------- sheets ---------- */
-function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=false;xMode=noClose||'';if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
+function sheet(title,build,noClose){$('mT').textContent=title;const b=$('mB');b.innerHTML='';build(b);$('mX').hidden=!!noClose;$('mXX').hidden=false;xMode=noClose||'';xBack=null;if(!hPushed){try{history.pushState({tk:1},'');hPushed=true}catch(e){}}if(noClose==='game')b.append(mk('🚪','나가기 (그만할래요)',quitSheet,'quit'));$('m').hidden=false;$('m').querySelector('.sheet').scrollTop=0;fitSheet()}
 function fitSheet(){const sh=$('m').querySelector('.sheet');if(!sh||$('m').hidden)return;sh.style.zoom='';sh.style.width='';sh.style.maxHeight='';if(innerWidth>600)return;const r=sh.clientHeight/sh.scrollHeight;if(r<1){const z=Math.max(.62,r-.01);sh.style.zoom=z;sh.style.width=Math.min(340,innerWidth-24)/z+'px';sh.style.maxHeight=(innerHeight-24)/z+'px'}}
 function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.querySelector('.side');if(!bz)return;bz.style.removeProperty('width');if(sd)sd.style.zoom='';if(innerWidth>600)return;
   const over0=()=>document.documentElement.scrollHeight-innerHeight;
@@ -546,8 +559,8 @@ function fitScreen(){const bz=document.querySelector('.bezel'),sd=document.query
   const ov=over0();if(ov>1&&sd){const h=sd.offsetHeight;sd.style.zoom=Math.max(.78,(h-ov-2)/h)}if(typeof fitCanvas==='function'){fitCanvas();try{draw()}catch(e){}}}
 window.addEventListener('resize',()=>{fitScreen();fitSheet()});
 function closeSheet(){$('m').hidden=true}
-let xMode='',hPushed=false,backAt=0;
-function xClose(){const t=$('mT').textContent;
+let xMode='',xBack=null,hPushed=false,backAt=0;
+function xClose(){const t=$('mT').textContent;if(xBack){const f=xBack;xBack=null;f();return}
   if(xMode==='game'){quitSheet();return}
   if(locked){if(t.startsWith('👥'))return (typeof owner!=='undefined'&&!owner&&typeof busySlot==='function')?busySlot():lockScreen();return charSheet()}
   closeSheet();if(st.hatched&&(!st.name||!st.kind||!st.gender))say('화면을 누르면 이름을 지을 수 있어요 ✏️',9e9)}
@@ -559,19 +572,20 @@ try{history.pushState({tk:1},'');hPushed=true}catch(e){}
 function mk(ic,lb,fn,cls){const b=document.createElement('button');b.innerHTML=`<span class="ic">${ic}</span>${lb}`;b.onclick=fn;if(cls)b.className=cls;return b}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
 
-function growRow(k,g0){const w=el('div','growrow');['아기','어린이','청소년','어른'].forEach((n,i)=>{const c=el('div','growc');c.append(petThumb({kind:k,stage:i+1,gender:g0||'girl'},34,30),el('small',null,n));w.append(c);if(i<3)w.append(el('span','growar','›'))});return w}
+function growRow(k,g0,mood){const w=el('div','growrow');['아기','어린이','청소년','어른'].forEach((n,i)=>{const c=el('div','growc');c.append(petThumb({kind:k,stage:i+1,gender:g0||'girl',mood},34,46),el('small',null,n));w.append(c);if(i<3)w.append(el('span','growar','›'))});return w}
+let npick=null;
 function askName(){
-  let kind=st.kind||st.babyKind||'rabbit';
+  let kind=(npick&&npick.kind)||st.kind||st.babyKind||'rabbit';
   sheet('알에서 나왔어요!',b=>{
     b.append(el('div',null,'어떤 동물로 키울까요?'));
     const all=[];
     GROUPS.forEach(([gn,ks])=>{b.append(el('h3',null,gn));const g=el('div','grid');
-      ks.forEach(k=>{const [ic,n]=KINDS[k];const btn=mk(ic,n,()=>{kind=k;all.forEach(c=>c.classList.toggle('on',c===btn));gp.replaceChildren(el('div','growt',`${KINDS[k][0]} ${n}는 이렇게 자라요`),growRow(k))});if(k===kind)btn.classList.add('on');all.push(btn);g.append(btn)});b.append(g)});
-    const gp=el('div','growbox');gp.append(el('div','growt',`${KINDS[kind][0]} ${KINDS[kind][1]}는 이렇게 자라요`),growRow(kind));b.insertBefore(gp,b.children[1]);
-    let gender=st.gender||null;b.append(el('h3',null,'남자예요? 여자예요?'));const gg=el('div','grid two-col');const gb=[['boy','👦','남자'],['girl','👧','여자']].map(([v,ic,n])=>{const bt=mk(ic,n,()=>{gender=v;gb.forEach(x=>x.classList.toggle('on',x===bt))},gender===v?'on':'');gg.append(bt);return bt});b.append(gg);
+      ks.forEach(k=>{const [ic,n]=KINDS[k];const btn=mk(ic,n,()=>{npick={kind:k,gender,name:inp.value};kindDetail(k,true)});if(k===kind)btn.classList.add('on');all.push(btn);g.append(btn)});b.append(g)});
+    const gp=el('div','growbox');gp.append(el('div','growt',`${KINDS[kind][0]} ${KINDS[kind][1]}로 키워요 · 친구를 누르면 크게 볼 수 있어요`),growRow(kind,(npick&&npick.gender)||st.gender));b.insertBefore(gp,b.children[1]);
+    let gender=(npick&&npick.gender)||st.gender||null;b.append(el('h3',null,'남자예요? 여자예요?'));const gg=el('div','grid two-col');const gb=[['boy','👦','남자'],['girl','👧','여자']].map(([v,ic,n])=>{const bt=mk(ic,n,()=>{gender=v;gb.forEach(x=>x.classList.toggle('on',x===bt))},gender===v?'on':'');gg.append(bt);return bt});b.append(gg);
     b.append(el('div',null,'이름을 지어 주세요'));
-    const inp=document.createElement('input');inp.id='nameI';inp.maxLength=6;inp.placeholder='콩이';inp.autocomplete='off';inp.value=st.name||'';b.append(inp);
-    const ok=mk('💖','이름 정하기',()=>{if(!gender){say('남자인지 여자인지 골라 주세요!');return}st.gender=gender;const first=!st.name;st.kind=kind;st.name=inp.value.trim()||'콩이';if(first)log(`${st.gen>1?st.gen+'대째 ':''}${KINDS[kind][1]} ${st.name}가 태어났어요`);closeSheet();save();render();say(`안녕! 나는 ${st.name}야!`,5000)},'big');
+    const inp=document.createElement('input');inp.id='nameI';inp.maxLength=6;inp.placeholder='콩이';inp.autocomplete='off';inp.value=(npick&&npick.name)||st.name||'';b.append(inp);
+    const ok=mk('💖','이름 정하기',()=>{if(!gender){say('남자인지 여자인지 골라 주세요!');return}npick=null;st.gender=gender;const first=!st.name;st.kind=kind;st.name=inp.value.trim()||'콩이';if(first)log(`${st.gen>1?st.gen+'대째 ':''}${KINDS[kind][1]} ${st.name}가 태어났어요`);closeSheet();save();render();say(`안녕! 나는 ${st.name}야!`,5000)},'big');
     b.append(ok);inp.onkeydown=e=>{if(e.key==='Enter')ok.click()};
   },true);
 }
@@ -705,7 +719,19 @@ function diary(){sheet(`${st.name||'우리'} 육아일기`,b=>{
 let dexTab='kind';
 function kindsFound(){const f=new Set();if(st.hatched&&st.kind)f.add(st.kind);(st.album||[]).forEach(x=>x.kind&&f.add(x.kind));
   [0,1,2,3].forEach(i=>{if(i===SLOT)return;try{const d=slotData(i);if(d&&d.hatched&&d.kind)f.add(d.kind);(d&&d.album||[]).forEach(x=>x.kind&&f.add(x.kind))}catch(e){}});return f}
-function dexKind(k,has){sheet(`${KINDS[k][0]} ${KINDS[k][1]}`,b=>{b.append(el('div','howdn',has?'⭐ 키워 본 친구예요!':'아직 키워 보지 않은 친구예요'),growRow(k),mk('📖','도감으로 돌아가기',dex,'big'))})}
+let kdTab='grow';
+function kindDetail(k,fromPick,has){const [ic,n]=KINDS[k];
+  sheet(`${ic} ${n}`,b=>{
+    const tb=el('div','ctabs three');[['grow','🌱','자라는 모습'],['face','😊','표정'],['dex','📖','도감']].forEach(([t,i2,l])=>tb.append(mk(i2,l,()=>{kdTab=t;kindDetail(k,fromPick,has)},kdTab===t?'on':'')));b.append(tb);
+    if(kdTab==='grow'){[['girl','👧 여자'],['boy','👦 남자']].forEach(([gd,l])=>{const bx=el('div','growbox');bx.append(el('div','growt',l),growRow(k,gd));b.append(bx)})}
+    else if(kdTab==='face'){b.append(el('div','howdn','하트가 줄어들면 표정이 바뀌어요'));const g=el('div','growrow');
+      [['happy','기쁨'],['normal','보통'],['worry','50% 아래'],['cry','30% 아래']].forEach(([m,l])=>{const c=el('div','growc');c.append(petThumb({kind:k,stage:4,gender:'girl',mood:m},34,46),el('small',null,l));g.append(c)});b.append(g)}
+    else{b.append(el('div','howdn','도감에는 어른 모습으로 담겨요. 키우면 색이 켜져요!'));const r=el('div','dexpair');
+      [[false,'키우기 전'],[true,'키운 뒤']].forEach(([on,l])=>{const c=el('div','dexc big'+(on?'':' off'));c.append(petThumb({kind:k,stage:4,gender:'girl'},40,40),el('b',null,n),el('small',null,l));r.append(c)});b.append(r);
+      if(has!=null)b.append(el('div','howdn',has?'⭐ 키워 본 친구예요!':'아직 키워 보지 않은 친구예요'))}
+    if(fromPick)b.append(mk('💖',`${n}로 할래요`,()=>{npick=Object.assign(npick||{},{kind:k});askName()},'big'),mk('↩️','다른 친구 보기',askName,'big'));
+    else b.append(mk('📖','도감으로 돌아가기',dex,'big'))},fromPick?true:undefined);xBack=fromPick?askName:dex}
+function dexKind(k,has){kindDetail(k,false,has)}
 function dex(){sheet('📖 도감',b=>{
   const tb=el('div','ctabs two');[['kind','🐾','친구 도감'],['form','👑','어른 모습']].forEach(([k,ic,n])=>tb.append(mk(ic,n,()=>{dexTab=k;dex()},dexTab===k?'on':'')));b.append(tb);
   if(dexTab==='kind'){const f=kindsFound(),all=GROUPS.flatMap(g=>g[1]);
@@ -1120,7 +1146,7 @@ function marrySlot(i){const d=slotData(i);if(!d)return;st.spouse={kind:d.kind,fo
   (d.diary=d.diary||[]).push({d:today(),t:`${st.name}와 결혼했어요 💍 해피 엔딩!`});try{localStorage.setItem(slotKey(i),JSON.stringify(d))}catch(e){}closeSheet();endGame()}
 function endGame(){st.ended=true;st.endedAt=Date.now();game=null;scene=null;st.paused=false;log(`${st.spouse.name}와 결혼했어요 💍 해피 엔딩!`);fx={t:'heart',s:Date.now(),d:4000};save();render();showEnding()}
 function petThumb(d,w,h){const c=document.createElement('canvas');c.width=w*3;c.height=h*3;c.className='thumb';const g=c.getContext('2d');g.fillStyle='#fff7ea';g.fillRect(0,0,c.width,c.height);
-  if(d&&d.kind)try{vPet(g,{gender:d.gender,kind:d.kind,colorKind:d.colorKind,stage:d.stage||4,form:d.form,wear:d.wear||{},x:w/2,y:h-3,sc:3,mood:'happy',f:0})}catch(e){}return c}
+  if(d&&d.kind)try{vPet(g,{gender:d.gender,kind:d.kind,colorKind:d.colorKind,stage:d.stage||4,form:d.form,wear:d.wear||{},x:w/2,y:h-3,sc:3,mood:d.mood||'happy',f:0})}catch(e){}return c}
 function showEnding(){const sp=st.spouse;if(!sp)return;const days=Math.floor((st.endedAt-st.born)/864e5)+1;
   sheet('🎉 해피 엔딩 🎉',b=>{const r=el('div','wedrow');r.append(petThumb(Object.assign({},st,{stage:4}),72,54),el('div','wedheart','💍'),petThumb(Object.assign({},sp,{stage:4}),72,54));b.append(r);
     b.append(el('div','quiz',`${st.name}와 ${sp.name}는 결혼해서 오래오래 행복하게 살았어요!`));
