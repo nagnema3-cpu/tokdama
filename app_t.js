@@ -1242,26 +1242,25 @@ const LIFE=[['🔴 빨간불이 켜지면?','멈춰요',['건너요','뛰어요'
  ['🐶 강아지 소리는?','멍멍',['야옹','꿀꿀']],['🐱 고양이 소리는?','야옹',['멍멍','음메']],['🐔 닭 소리는?','꼬끼오',['개굴개굴','짹짹']],['🦷 이를 튼튼하게 하려면?','양치하기',['사탕 먹기','늦게 자기']],['🚸 길을 건널 때는?','횡단보도로',['아무 데서나','뛰어서']]];
 const pickOpts=(ans,pool)=>shuffle([ans,...shuffle(pool.filter(x=>x!==ans)).slice(0,2)]);
 const SUBJ={
- math:['🔢','수학',['세 자리 수 더하기·빼기, 구구단','곱셈·나눗셈·시간 계산','큰 수 계산·나머지·분수·문장 문제'],lv=>{
+ math:['🔢','수학',['두 자리 ± 한 자리, 구구단 2~5단','두 자리 ± 두 자리, 구구단 2~9단','받아올림 계산, 구구단 빈칸, 문장 문제'],lv=>{
    const near=(a,step)=>{const s=new Set([a]);while(s.size<3){const v=a+(rnd(2)?1:-1)*step*(1+rnd(2));if(v>=0)s.add(v)}return shuffle([...s].map(String))};
+   const gugu=(lo,hi)=>{const a=lo+rnd(hi-lo+1),b=1+rnd(9);return{q:`${a} × ${b} = ?`,ans:String(a*b),opts:near(a*b,a)}};
    if(lv===1){const t=rnd(3);
-     if(t===0){const a=100+rnd(800),b=10+rnd(Math.min(99,899-a));return{q:`${a} + ${b} = ?`,ans:String(a+b),opts:near(a+b,10)}}
-     if(t===1){const a=200+rnd(700),b=10+rnd(99);return{q:`${a} − ${b} = ?`,ans:String(a-b),opts:near(a-b,10)}}
-     const a=2+rnd(8),b=2+rnd(8);return{q:`${a} × ${b} = ?`,ans:String(a*b),opts:near(a*b,a)}}
-   if(lv===2){const t=rnd(4);
-     if(t===0){const a=11+rnd(89),b=2+rnd(8);return{q:`${a} × ${b} = ?`,ans:String(a*b),opts:near(a*b,b)}}
-     if(t===1){const b=2+rnd(8),c=2+rnd(8);return{q:`${b*c} ÷ ${b} = ?`,ans:String(c),opts:nums(c)}}
-     if(t===2){const h=1+rnd(10),m=[10,20,30,40][rnd(4)],add=[20,30,40,50][rnd(4)];let M=m+add,H=h;if(M>=60){M-=60;H++}const f=(x,y)=>`${x}시 ${y?y+'분':''}`.trim();
-       return{q:`🕐 ${f(h,m)}에서<br>${add}분 뒤는 몇 시일까요?`,ans:f(H,M),opts:shuffle([f(H,M),f(H,(M+10)%60),f(h,(m+add)%60)]).filter((v,i,a)=>a.indexOf(v)===i).concat([f(H+1,M)]).slice(0,3)}}
-     const cm=1+rnd(9),mm=rnd(10);return{q:`📏 ${cm}cm ${mm}mm는<br>몇 mm일까요?`,ans:String(cm*10+mm),opts:near(cm*10+mm,10)}}
-   const t=rnd(5);
-   if(t===0){const a=300+rnd(600),b=150+rnd(Math.max(1,999-a-150));return{q:`${a} + ${b} = ?`,ans:String(a+b),opts:near(a+b,10)}}
-   if(t===1){const a=500+rnd(500),b=120+rnd(380);return{q:`${a} − ${b} = ?`,ans:String(a-b),opts:near(a-b,10)}}
-   if(t===2){const b=3+rnd(7),c=3+rnd(7),r=1+rnd(b-1),n=b*c+r;return{q:`${n} ÷ ${b} = ?`,ans:`${c} … 나머지 ${r}`,opts:shuffle([`${c} … 나머지 ${r}`,`${c+1} … 나머지 ${r}`,`${c} … 나머지 ${(r%(b-1))+1===r?r+1:(r%(b-1))+1}`])}}
-   if(t===3){const d=[3,4,5,6,8][rnd(5)],x=1+rnd(d-1);let y=1+rnd(d-1);if(y===x)y=x%(d-1)+1;return{q:`더 큰 분수는?<br>${x}/${d} 와 ${y}/${d}`,ans:`${Math.max(x,y)}/${d}`,opts:shuffle([`${x}/${d}`,`${y}/${d}`])}}
-   const P=[()=>{const a=3+rnd(6),b=4+rnd(6);return[`🍬 사탕이 한 봉지에 ${b}개씩<br>${a}봉지 있어요. 모두 몇 개?`,a*b,b]},
-     ()=>{const b=3+rnd(5),c=3+rnd(6);return[`🍪 쿠키 ${b*c}개를 ${b}명이<br>똑같이 나누면 한 명에 몇 개?`,c,1]},
-     ()=>{const a=200+rnd(300),b=50+rnd(150);return[`📚 책이 ${a}권 있었는데<br>${b}권을 빌려줬어요. 남은 책은?`,a-b,10]}];
+     if(t===0){const a=10+rnd(80),b=1+rnd(Math.min(9,99-a));return{q:`${a} + ${b} = ?`,ans:String(a+b),opts:nums(a+b)}}
+     if(t===1){const a=11+rnd(89),b=1+rnd(9);return{q:`${a} − ${b} = ?`,ans:String(a-b),opts:nums(a-b)}}
+     return gugu(2,5)}
+   if(lv===2){const t=rnd(3);
+     if(t===0){const a=10+rnd(70),b=10+rnd(Math.max(1,89-a));return{q:`${a} + ${b} = ?`,ans:String(a+b),opts:near(a+b,10)}}
+     if(t===1){const a=30+rnd(70),b=10+rnd(a-19);return{q:`${a} − ${b} = ?`,ans:String(a-b),opts:near(a-b,10)}}
+     return gugu(2,9)}
+   const t=rnd(4);
+   if(t===0){let a,b;do{a=15+rnd(70);b=5+rnd(40)}while((a%10)+(b%10)<10||a+b>99);return{q:`${a} + ${b} = ?`,ans:String(a+b),opts:near(a+b,10)}}
+   if(t===1){let a,b;do{a=30+rnd(70);b=11+rnd(50)}while((a%10)>=(b%10)||b>=a);return{q:`${a} − ${b} = ?`,ans:String(a-b),opts:near(a-b,10)}}
+   if(t===2){const a=2+rnd(8),b=1+rnd(9);return{q:`<u>&nbsp;?&nbsp;</u> × ${a} = ${a*b}`,ans:String(b),opts:nums(b)}}
+   const P=[()=>{const a=2+rnd(8),b=2+rnd(8);return[`🍬 사탕이 한 봉지에 ${a}개씩<br>${b}봉지 있어요. 모두 몇 개?`,a*b,a]},
+     ()=>{const a=20+rnd(50),b=10+rnd(Math.min(29,90-a));return[`🐟 물고기가 ${a}마리 있었는데<br>${b}마리가 더 왔어요. 모두 몇 마리?`,a+b,10]},
+     ()=>{const a=40+rnd(59),b=11+rnd(28);return[`🍪 쿠키가 ${a}개 있었는데<br>${b}개를 먹었어요. 남은 쿠키는?`,a-b,10]},
+     ()=>{const b=2+rnd(8);return[`🐰 토끼 ${b}마리의 다리는<br>모두 몇 개일까요?`,b*4,4]}];
    const [q,ans,st]=P[rnd(P.length)]();return{q,ans:String(ans),opts:near(ans,st)}}],
  kor:['🇰🇷','국어',['비슷한말·반대말','바른 맞춤법 고르기','속담·높임말'],lv=>{
    if(lv===1){const SIM=[['기쁘다','즐겁다','슬프다'],['예쁘다','아름답다','무섭다'],['빠르다','재빠르다','느리다'],['시작','처음','끝'],['친구','벗','어른'],['걱정','근심','기쁨'],['깨끗하다','청결하다','더럽다'],['용감하다','씩씩하다','겁나다'],['가득','잔뜩','조금'],['고르다','선택하다','버리다']];
