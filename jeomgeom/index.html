@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f5f8b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="점검편성">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>점검 조 편성표</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 위에서 아래로 — 날짜 → 일정 입력 → 조별 결과. 한 손 폰 사용 기준 한 줄 흐름 */
+:root{
+  --bg:#f3f5f7; --card:#ffffff; --ink:#18232e; --sub:#5b6875; --line:#dde3e9;
+  --accent:#1f5f8b; --accent-ink:#ffffff; --reg:#1f5f8b; --use:#b8640a; --bad:#b3261e; --ok:#2e7d4f;
+  --r1:#2b6cb0; --r2:#2f855a; --r3:#b7791f; --r4:#805ad5;
+  --t1:#d1495b; --t2:#1d7fb8; --t3:#2a9d5c; --t4:#c77d0a; --t5:#7b4fc9;
+  --font:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11171d; --card:#1a222b; --ink:#e6edf3; --sub:#97a4b1; --line:#2b3641;
+  --accent:#5aa3d6; --accent-ink:#0b1218; --reg:#6cb2e4; --use:#f0a24a; --bad:#f2827a; --ok:#6fcf97;
+  --r1:#6ca6e8; --r2:#68c290; --r3:#e2b04f; --r4:#b49bf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171d; --card:#1a222b; --ink:#e6edf3; --sub:#97a4b1; --line:#2b3641;
+  --accent:#5aa3d6; --accent-ink:#0b1218; --reg:#6cb2e4; --use:#f0a24a; --bad:#f2827a; --ok:#6fcf97;
+  --r1:#6ca6e8; --r2:#68c290; --r3:#e2b04f; --r4:#b49bf0; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:22px;margin:0;text-wrap:balance}
+h2{font-size:16px;margin:0}
+.sub{color:var(--sub);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+label{font-size:12px;color:var(--sub);display:flex;flex-direction:column;gap:4px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+textarea{min-height:90px;resize:vertical}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;flex:1}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.list{display:flex;flex-direction:column;gap:6px}
+.item{display:grid;grid-template-columns:auto auto 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.p-reg{color:var(--reg);border:1px solid var(--reg)}
+.p-use{color:var(--use);border:1px solid var(--use)}
+.chip{font-size:12px;padding:2px 8px;border-radius:6px;color:#fff;white-space:nowrap}
+.time{font-variant-numeric:tabular-nums;font-weight:500}
+.x{border:0;background:none;color:var(--sub);padding:4px 8px}
+.teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.team{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.team header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:#fff}
+.team header b{font-size:17px}
+.team .body{padding:6px 14px 12px}
+.slot{display:grid;grid-template-columns:96px auto 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed var(--line);font-size:14px}
+.slot:first-child{border-top:0}
+.idle{color:var(--sub);font-size:13px;padding:8px 0}
+.warn{border:1px solid var(--bad);color:var(--bad);border-radius:12px;padding:12px 14px;background:var(--card)}
+.warn ul{margin:6px 0 0;padding-left:18px;color:var(--ink)}
+.banner{font-size:13px;color:var(--sub);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.stats{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--sub)}
+.stats b{color:var(--ink);font-variant-numeric:tabular-nums}
+details summary{cursor:pointer;color:var(--sub);font-size:13px}
+.nav{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.nav::after{content:" ↗";color:var(--accent);font-size:12px}
+#map text{fill:var(--ink);font-family:var(--font)}
+#map .rg{cursor:pointer}
+#map .rg:hover path{fill-opacity:.4}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:99px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.team{animation:in .25s ease both}@keyframes in{from{opacity:.4;transform:translateY(4px)}}}
+</style>
+
+</head><body>
+<div class="wrap">
+  <div>
+    <h1>점검 조 편성표</h1>
+    <div class="sub">5개 조 · 서해구·검단구·계양구·강화군 · 1건 2시간 · 한 조는 하루에 한 지역만</div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label style="flex:1">날짜<input type="date" id="date"></label>
+      <div class="row" style="align-self:flex-end">
+        <button id="prev" aria-label="전날">◀</button><button id="next" aria-label="다음날">▶</button>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div id="sampleBanner" class="banner" hidden>
+    <span>지금 보이는 일정은 <b>예시</b>입니다.</span>
+    <button id="clearSample">예시 지우기</button>
+  </div>
+
+  <div class="card">
+    <h2>일정 넣기</h2>
+    <div class="list" style="border:1px dashed var(--line);border-radius:10px;padding:10px">
+      <label style="color:var(--ink);font-size:14px;font-weight:700">엑셀 파일 올리기<input type="file" id="xls" accept=".xlsx,.xls,.csv"></label>
+      <div class="sub" style="font-size:12px">첫 줄 제목: <b>날짜 · 지역 · 종류 · 시간 · 주소 · 고객</b> (순서 상관없음, 날짜 없으면 위에 고른 날짜로). 종류에 '정기'가 있으면 정기검사, 아니면 사용점검.</div>
+    </div>
+    <div class="seg" role="group" aria-label="검사 종류">
+      <button id="tReg" class="on">정기검사 (고객 시간)</button>
+      <button id="tUse">사용점검 (시간 자동)</button>
+    </div>
+    <div class="grid2">
+      <label>지역<select id="region"></select></label>
+      <label id="timeWrap">고객 신청 시간<input type="time" id="time" step="1800" value="10:00"></label>
+    </div>
+    <label>고객 / 주소 (선택)<input id="name" placeholder="예: 김OO 강화읍 갑곶리"></label>
+    <button class="primary" id="add">추가</button>
+    <details>
+      <summary>여러 건 한 번에 붙여넣기</summary>
+      <div class="list" style="margin-top:8px">
+        <div class="sub">한 줄에 1건. 예) <b>강화 정기 10:00 김OO</b> / <b>계양 사용 이OO</b></div>
+        <textarea id="bulk" placeholder="서해 정기 09:00 홍길동&#10;검단 사용 박OO 아파트"></textarea>
+        <button id="bulkAdd">붙여넣은 일정 추가</button>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><h2>이 날 일정 <span id="cnt" class="sub"></span></h2></div>
+    <div class="list" id="list"></div>
+  </div>
+
+  <div class="row" style="justify-content:space-between">
+    <h2>조별 스케줄</h2>
+    <button id="copy">카톡용 복사</button>
+  </div>
+  <div class="card" style="gap:6px">
+    <h2>점검 지도</h2>
+    <div class="sub">점 = 점검 1건, 숫자 = 그 조가 가는 순서. 점을 누르면 네이버 지도가 열립니다.</div>
+    <div class="row" id="legend" style="gap:10px;font-size:13px"></div>
+    <div style="overflow-x:auto"><svg id="map" viewBox="0 0 360 250" style="width:100%;max-width:520px;display:block;margin:0 auto" role="img" aria-label="지역별 조 배치 지도"></svg></div>
+    <div class="sub" style="font-size:12px">점 위치는 주소의 동·읍·면 이름으로 대략 찍은 것입니다. 동 이름이 없으면 지역 가운데쯤에 찍힙니다.</div>
+  </div>
+  <div id="warn"></div>
+  <div class="teams" id="teams"></div>
+
+  <details class="card">
+    <summary>근무 시간 설정</summary>
+    <div class="grid2">
+      <label>출근<input type="time" id="ws" step="1800"></label>
+      <label>퇴근<input type="time" id="we" step="1800"></label>
+      <label>점심 시작<input type="time" id="ls" step="1800"></label>
+      <label>점심 끝<input type="time" id="le" step="1800"></label>
+    </div>
+  </details>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const REG=['서해구','검단구','계양구','강화군'];
+const RCOL={'서해구':'var(--r1)','검단구':'var(--r2)','계양구':'var(--r3)','강화군':'var(--r4)'};
+const TEAMS=5, DUR=120, STEP=30, KEY='insp-sched-v1';
+const $=id=>document.getElementById(id);
+const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const m=t=>{const[a,b]=t.split(':');return +a*60+ +b};
+const hm=x=>String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+let S=null;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S){
+  const d=today();
+  const ex=[['서해구','정기','09:00','김OO 가정동'],['서해구','정기','09:00','이OO 석남동'],['서해구','정기','14:00','박OO 가좌동'],['서해구','사용','','청라 상가 A동'],['서해구','사용','','청라 상가 B동'],
+    ['검단구','정기','10:00','최OO 마전동'],['검단구','사용','','당하동 아파트'],['검단구','사용','','원당동 식당'],
+    ['계양구','정기','13:00','정OO 작전동'],['계양구','사용','','계산동 빌라'],['계양구','사용','','효성동 공장'],
+    ['강화군','정기','11:00','한OO 강화읍'],['강화군','사용','','길상면 펜션']];
+  S={date:d,type:'정기',cfg:{ws:'09:00',we:'18:00',ls:'12:00',le:'13:00'},
+     entries:ex.map(([region,type,time,name])=>({id:uid(),date:d,region,type,time,name,sample:true}))};
+}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+/* ---------- 스케줄 계산 ---------- */
+const ov=(a,b)=>a.s<b.e&&b.s<a.e;
+function findSlot(team,c){
+  for(let t=c.ws;t+DUR<=c.we;t+=STEP){
+    const iv={s:t,e:t+DUR};
+    if(ov(iv,{s:c.ls,e:c.le}))continue;
+    if(team.some(x=>ov(iv,x)))continue;
+    return t;
+  }
+  return null;
+}
+function simulate(items,k,c){
+  const teams=Array.from({length:k},()=>[]), out=[];
+  items.filter(i=>i.type==='정기').sort((a,b)=>m(a.time)-m(b.time)).forEach(i=>{
+    const iv={s:m(i.time),e:m(i.time)+DUR,item:i};
+    const ok=teams.filter(t=>!t.some(x=>ov(iv,x))).sort((a,b)=>a.length-b.length)[0];
+    if(ok)ok.push(iv);else out.push({item:i,why:'같은 시간대 정기검사가 조 수보다 많음'});
+  });
+  items.filter(i=>i.type==='사용').forEach(i=>{
+    let best=null;
+    teams.forEach(t=>{const s=findSlot(t,c);if(s!==null&&(!best||t.length<best.t.length||(t.length===best.t.length&&s<best.s)))best={t,s}});
+    if(best)best.t.push({s:best.s,e:best.s+DUR,item:i});else out.push({item:i,why:'근무시간 안에 빈 시간이 없음'});
+  });
+  teams.forEach(t=>t.sort((a,b)=>a.s-b.s));
+  return {teams,out};
+}
+function plan(date){
+  const c={ws:m(S.cfg.ws),we:m(S.cfg.we),ls:m(S.cfg.ls),le:m(S.cfg.le)};
+  const day=S.entries.filter(e=>e.date===date);
+  const by={};REG.forEach(r=>by[r]=day.filter(e=>e.region===r));
+  const active=REG.filter(r=>by[r].length);
+  const alloc={};active.forEach(r=>alloc[r]=1);
+  let rem=TEAMS-active.length;
+  while(rem>0){
+    let pick=null,worst=0;
+    active.forEach(r=>{const n=simulate(by[r],alloc[r],c).out.length;if(n>worst){worst=n;pick=r}});
+    if(!pick){ // 다 들어가면 남는 조는 일이 가장 많은 지역에 붙여 부담 나눔
+      let hi=null,load=0;
+      active.forEach(r=>{const l=by[r].length/alloc[r];if(l>load&&by[r].length>alloc[r]){load=l;hi=r}});
+      if(!hi)break;pick=hi;
+    }
+    alloc[pick]++;rem--;
+  }
+  const res=[];let no=1;const out=[];
+  active.forEach(r=>{const s=simulate(by[r],alloc[r],c);s.teams.forEach(t=>{optimize(t,r);res.push({no:no++,region:r,jobs:t})});out.push(...s.out)});
+  while(no<=TEAMS)res.push({no:no++,region:null,jobs:[]});
+  return {res,out,day};
+}
+
+/* ---------- 화면 ---------- */
+function setType(t){S.type=t;$('tReg').classList.toggle('on',t==='정기');$('tUse').classList.toggle('on',t==='사용');$('timeWrap').hidden=t!=='정기';save()}
+const dLabel=d=>{const x=new Date(d+'T00:00');return (x.getMonth()+1)+'/'+x.getDate()+'('+'일월화수목금토'[x.getDay()]+')'};
+const pill=t=>`<span class="pill ${t==='정기'?'p-reg':'p-use'}">${t==='정기'?'정기':'사용'}</span>`;
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let last=null;
+
+function render(){
+  $('date').value=S.date;
+  const P=plan(S.date);last=P;
+  $('sampleBanner').hidden=!S.entries.some(e=>e.sample);
+  const day=P.day.slice().sort((a,b)=>REG.indexOf(a.region)-REG.indexOf(b.region)||(a.type>b.type?1:-1)||(a.time||'').localeCompare(b.time||''));
+  $('cnt').textContent=day.length?`${day.length}건`:'';
+  $('list').innerHTML=day.length?day.map(e=>`<div class="item">
+      <span class="chip" style="background:${RCOL[e.region]}">${e.region}</span>${pill(e.type)}
+      <span style="min-width:0;overflow-wrap:anywhere"><span class="time">${e.type==='정기'?e.time:'시간 자동'}</span> ${esc(e.name)}</span>
+      <button class="x" data-del="${e.id}" aria-label="삭제">✕</button></div>`).join('')
+    :'<div class="idle">이 날짜에 일정이 없습니다. 위에서 추가해 주세요.</div>';
+  const nReg=day.filter(e=>e.type==='정기').length;
+  const used=P.res.filter(t=>t.region).length;
+  $('stats').innerHTML=`<span>정기 <b>${nReg}</b></span><span>사용 <b>${day.length-nReg}</b></span><span>출동 조 <b>${used}</b>/5</span><span>배정 못함 <b style="color:${P.out.length?'var(--bad)':'var(--ok)'}">${P.out.length}</b></span>`;
+  $('warn').innerHTML=P.out.length?`<div class="warn"><b>배정 못한 일정 ${P.out.length}건</b> — 다른 날로 옮기거나 근무시간을 늘려 주세요.<ul>${P.out.map(o=>`<li>${o.item.region} ${o.item.type}${o.item.time?' '+o.item.time:''} ${esc(o.item.name)} <span class="sub">(${o.why})</span></li>`).join('')}</ul></div>`:'';
+  $('teams').innerHTML=P.res.map(t=>`<div class="team">
+    <header style="background:${t.region?'var(--t'+t.no+')':'var(--sub)'}"><b>${t.no}조</b><span>${t.region||'대기'}${t.region?' · '+t.jobs.length+'건':''}</span></header>
+    <div class="body">${t.jobs.length?t.jobs.map(j=>`<div class="slot"><span class="time">${hm(j.s)}~${hm(j.e)}</span>${pill(j.item.type)}<a class="nav" target="_blank" rel="noopener" href="${naver(t.region,j.item.name)}" style="min-width:0;overflow-wrap:anywhere">${esc(j.item.name)||'지도 보기'}</a></div>`).join('')
+      :'<div class="idle">오늘 배정 없음</div>'}${t.jobs.length>1?`<div class="sub" style="font-size:12px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px"><b style="color:var(--ink)">추천 동선</b> ${t.jobs.map((j,i)=>(i+1)+'.'+esc(stopName(t.region,j.item.name))).join(' → ')}</div>`:''}</div></div>`).join('');
+  ['ws','we','ls','le'].forEach(k=>$(k).value=S.cfg[k]);
+  drawMap(P);
+}
+const naver=(r,n)=>'https://map.naver.com/p/search/'+encodeURIComponent(('인천 '+r+' '+(n||'')).trim());
+const SHAPES={
+  '강화군':{d:'M30 40 Q70 10 110 35 Q130 90 115 150 Q100 215 55 220 Q15 200 20 130 Q15 80 30 40Z',x:68,y:120},
+  '검단구':{d:'M150 25 Q210 12 250 30 L255 105 Q200 115 150 108 Q140 60 150 25Z',x:200,y:62},
+  '서해구':{d:'M150 115 Q200 122 255 112 L262 200 Q215 238 165 230 Q140 180 150 115Z',x:205,y:168},
+  '계양구':{d:'M262 60 Q310 50 345 75 Q352 140 330 190 Q295 200 268 195 L262 110Z',x:305,y:125}
+};
+const PLACES={
+  '강화군':{'강화읍':[95,58],'선원':[102,88],'불은':[102,122],'길상':[95,178],'화도':[58,198],'양도':[45,162],'내가':[40,112],'하점':[62,52],'송해':[82,42],'양사':[52,36],'교동':[30,48],'삼산':[30,82],'석모':[30,82],'갑곶':[105,70],'강화':[90,60]},
+  '검단구':{'대곡':[175,36],'불로':[196,34],'마전':[216,46],'원당':[228,72],'당하':[202,78],'오류':[166,84],'왕길':[166,64],'금곡':[242,50],'아라':[196,98],'검단동':[204,58]},
+  '서해구':{'검암':[214,126],'경서':[172,132],'백석':[196,124],'시천':[182,120],'연희':[214,150],'청라':[176,162],'공촌':[232,136],'심곡':[236,160],'가정':[226,182],'신현':[204,196],'석남':[240,202],'가좌':[226,218],'원창':[184,202]},
+  '계양구':{'귤현':[284,76],'동양':[300,86],'박촌':[308,100],'병방':[300,122],'임학':[314,128],'계산':[310,148],'효성':[296,176],'작전':[324,168],'서운':[336,150],'용종':[322,114],'갈현':[284,96],'장기':[288,112],'목상':[274,84]}
+};
+function pos0(r,name){const d=PLACES[r];for(const k in d)if((name||'').includes(k))return d[k];return[SHAPES[r].x,SHAPES[r].y]}
+function stopName(r,name){const d=PLACES[r];for(const k in d)if((name||'').includes(k))return k;return (name||'-').slice(0,8)}
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+/* 사용점검은 시간이 자유라서, 정기검사 자리는 고정한 채 사용점검 순서를 바꿔 이동거리가 가장 짧은 순서를 찾음 */
+function optimize(team,r){
+  const us=team.filter(j=>j.item.type==='사용');if(us.length<2)return;
+  const cost=ord=>{let k=0,prev=null,c=0;team.forEach(j=>{const it=j.item.type==='사용'?ord[k++]:j.item;const p=pos0(r,it.name);if(prev)c+=dist(prev,p);prev=p});return c};
+  let best=us.map(j=>j.item),bc=cost(best);
+  if(best.length<=6){
+    const perm=(arr,acc)=>{if(!arr.length){const c=cost(acc);if(c<bc){bc=c;best=acc.slice()}return}arr.forEach((x,i)=>perm(arr.filter((_,k)=>k!==i),acc.concat([x])))};
+    perm(best.slice(),[]);
+  }else{
+    const left=best.slice(),ord=[];let prev=null;
+    team.forEach(j=>{if(j.item.type!=='사용'){prev=pos0(r,j.item.name);return}
+      let bi=0;if(prev)left.forEach((x,i)=>{if(dist(prev,pos0(r,x.name))<dist(prev,pos0(r,left[bi].name)))bi=i});
+      const x=left.splice(bi,1)[0];ord.push(x);prev=pos0(r,x.name)});
+    if(cost(ord)<bc)best=ord;
+  }
+  let k=0;team.forEach(j=>{if(j.item.type==='사용')j.item=best[k++]});
+}
+function place(r,name,k){
+  const d=PLACES[r];for(const key in d)if((name||'').includes(key)){const[x,y]=d[key];return[x+(k%3-1)*9,y+Math.floor(k/3)*9]}
+  const s=SHAPES[r],a=k*2.4;return[s.x+Math.cos(a)*(8+k*3),s.y+28+Math.sin(a)*(6+k*2)];
+}
+function drawMap(P){
+  const used={};
+  let base='<text x="125" y="240" font-size="11" style="fill:var(--sub)">바다</text>'+REG.map(r=>{
+    const s=SHAPES[r],ts=P.res.filter(t=>t.region===r);
+    return `<a class="rg" href="${naver(r,'')}" target="_blank" rel="noopener"><path d="${s.d}" fill="${RCOL[r]}" fill-opacity="${ts.length?.18:.06}" stroke="${RCOL[r]}" stroke-width="1.5"/>
+      <text x="${s.x}" y="${s.y-14}" text-anchor="middle" font-size="13" font-weight="700" fill-opacity=".75">${r}</text></a>`;
+  }).join('');
+  let lines='',dots='';
+  P.res.filter(t=>t.region).forEach(t=>{
+    const c=`var(--t${t.no})`,pts=t.jobs.map(j=>{const key=t.region+'|'+(j.item.name||'');const k=used[t.region+(PLACES[t.region]&&Object.keys(PLACES[t.region]).find(x=>(j.item.name||'').includes(x))||'')]=(used[t.region+(PLACES[t.region]&&Object.keys(PLACES[t.region]).find(x=>(j.item.name||'').includes(x))||'')]||0)+1;return place(t.region,j.item.name,k-1)});
+    if(pts.length>1)lines+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="2" stroke-dasharray="4 3"/>`;
+    pts.forEach((p,i)=>{const j=t.jobs[i];dots+=`<a href="${naver(t.region,j.item.name)}" target="_blank" rel="noopener"><title>${t.no}조 ${i+1}번째 · ${hm(j.s)} ${j.item.type} ${esc(j.item.name)}</title><circle cx="${p[0]}" cy="${p[1]}" r="8" fill="${c}" stroke="var(--card)" stroke-width="1.5"/><text x="${p[0]}" y="${p[1]+3.5}" text-anchor="middle" font-size="10" font-weight="700" style="fill:#fff">${i+1}</text></a>`});
+  });
+  $('map').innerHTML=base+lines+dots;
+  $('legend').innerHTML=P.res.filter(t=>t.region).map(t=>`<span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12"><circle cx="6" cy="6" r="6" fill="var(--t${t.no})"/></svg>${t.no}조 ${t.region}</span>`).join('')||'<span class="sub">일정을 넣으면 점이 찍힙니다</span>';
+}
+
+function addEntry(region,type,time,name){
+  S.entries=S.entries.filter(e=>!e.sample||e.date!==S.date||true);
+  S.entries.push({id:uid(),date:S.date,region,type,time:type==='정기'?time:'',name});
+}
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800)}
+
+$('region').innerHTML=REG.map(r=>`<option>${r}</option>`).join('');
+$('tReg').onclick=()=>setType('정기');$('tUse').onclick=()=>setType('사용');
+$('add').onclick=()=>{
+  if(S.type==='정기'&&!$('time').value){toast('고객 신청 시간을 넣어 주세요');return}
+  addEntry($('region').value,S.type,$('time').value,$('name').value.trim());
+  $('name').value='';save();render();toast('추가했습니다');
+};
+$('list').onclick=e=>{const id=e.target.dataset.del;if(!id)return;S.entries=S.entries.filter(x=>x.id!==id);save();render()};
+$('date').onchange=e=>{S.date=e.target.value||today();save();render()};
+const shift=n=>{const d=new Date(S.date+'T00:00');d.setDate(d.getDate()+n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());S.date=d.toISOString().slice(0,10);save();render()};
+$('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);
+$('clearSample').onclick=()=>{S.entries=S.entries.filter(e=>!e.sample);save();render();toast('예시를 지웠습니다')};
+['ws','we','ls','le'].forEach(k=>$(k).onchange=e=>{if(e.target.value){S.cfg[k]=e.target.value;save();render()}});
+
+const regionOf=s=>{s=String(s||'');return /강화/.test(s)?'강화군':/계양/.test(s)?'계양구':/검단/.test(s)?'검단구':/서해|서구/.test(s)?'서해구':(()=>{for(const r of REG)for(const k in PLACES[r])if(s.includes(k))return r;return null})()};
+function parseTime(v){
+  if(v===''||v==null)return '';
+  if(typeof v==='number'){return hm(Math.round((v%1)*1440)%1440)}
+  const s=String(v),t1=s.match(/(\d{1,2}):(\d{2})/),t2=s.match(/(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분|\s*반)?/);
+  if(t1)return t1[1].padStart(2,'0')+':'+t1[2];
+  if(t2)return t2[1].padStart(2,'0')+':'+(t2[2]?t2[2].padStart(2,'0'):/반/.test(t2[0])?'30':'00');
+  if(/^\d{1,2}$/.test(s.trim()))return s.trim().padStart(2,'0')+':00';
+  return '';
+}
+function parseDate(v){
+  const p=n=>String(n).padStart(2,'0');
+  if(v===''||v==null)return S.date;
+  if(typeof v==='number'&&v>20000){const d=new Date(Math.round((Math.floor(v)-25569)*86400000));return d.toISOString().slice(0,10)}
+  const s=String(v);let x=s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if(x)return x[1]+'-'+p(x[2])+'-'+p(x[3]);
+  x=s.match(/(\d{1,2})\D+(\d{1,2})/);if(x)return S.date.slice(0,4)+'-'+p(x[1])+'-'+p(x[2]);
+  return S.date;
+}
+$('xls').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(!window.XLSX){toast('엑셀 읽기 도구를 불러오지 못했습니다. 새로고침 후 다시 해 주세요');return}
+  try{
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});
+    let h=rows.slice(0,6).findIndex(r=>r.some(c=>/지역|종류|구분|시간|주소|고객/.test(String(c))));
+    const col=re=>h<0?-1:rows[h].findIndex(c=>re.test(String(c)));
+    const C={d:col(/날짜|일자/),r:col(/지역|행정|^구$/),t:col(/종류|구분|검사/),tm:col(/시간/),a:col(/주소/),n:col(/고객|이름|성명|상호/)};
+    let n=0,bad=0;const dates=new Set();
+    rows.slice(h+1).forEach(r=>{
+      if(!r.some(c=>String(c).trim()))return;
+      let item;
+      if(h<0){item=parseLine(r.join(' '));if(item)item.date=S.date}
+      else{
+        const g=i=>i<0?'':r[i];
+        const addr=String(g(C.a)).trim(),nm=String(g(C.n)).trim();
+        const region=regionOf(g(C.r))||regionOf(addr);
+        const time=parseTime(g(C.tm));
+        const type=C.t>=0?(/정기/.test(String(g(C.t)))?'정기':'사용'):(time?'정기':'사용');
+        item=(!region||(type==='정기'&&!time))?null:{region,type,time,name:[addr,nm].filter(Boolean).join(' '),date:parseDate(g(C.d))};
+      }
+      if(!item){bad++;return}
+      S.entries.push({id:uid(),...item,time:item.type==='정기'?item.time:''});dates.add(item.date);n++;
+    });
+    if(dates.size)S.date=[...dates].sort()[0];
+    save();render();
+    toast(`${n}건 넣었습니다`+(dates.size>1?` (${dates.size}일치)`:'')+(bad?` · ${bad}줄은 지역/시간을 못 읽음`:''));
+  }catch(err){toast('파일을 읽지 못했습니다. 엑셀(.xlsx) 파일이 맞는지 확인해 주세요')}
+  e.target.value='';
+};
+function parseLine(line){
+    const region=regionOf(line);
+    const type=/정기/.test(line)?'정기':'사용';
+    const t1=line.match(/(\d{1,2}):(\d{2})/),t2=line.match(/(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분|\s*반)?/);
+    const time=parseTime(line);
+    if(!region||(type==='정기'&&!time))return null;
+    const name=line.replace(/(서해구|서해|서구|검단구|검단|계양구|계양|강화군)/,'').replace(/정기검사|정기|사용점검|사용/,'').replace(t1?t1[0]:(t2?t2[0]:'§'),'').trim();
+    return {region,type,time,name};
+}
+$('bulkAdd').onclick=()=>{
+  let n=0,bad=0;
+  $('bulk').value.split('\n').map(s=>s.trim()).filter(Boolean).forEach(line=>{
+    const it=parseLine(line);
+    if(!it){bad++;return}
+    const {region,type,time,name}=it;
+    addEntry(region,type,time,name);n++;
+  });
+  save();render();
+  if(!bad)$('bulk').value='';
+  toast(`${n}건 추가`+(bad?` · ${bad}줄은 지역/시간을 못 읽음`:''));
+};
+
+$('copy').onclick=()=>{
+  const P=last;let txt=`${dLabel(S.date)} 점검 스케줄\n`;
+  P.res.filter(t=>t.region).forEach(t=>{txt+=`\n[${t.no}조] ${t.region}\n`;t.jobs.forEach(j=>txt+=`${hm(j.s)}~${hm(j.e)} ${j.item.type==='정기'?'정기검사':'사용점검'} ${j.item.name||''}\n`)});
+  if(P.out.length)txt+=`\n※ 배정 못함 ${P.out.length}건\n`+P.out.map(o=>`- ${o.item.region} ${o.item.type} ${o.item.time||''} ${o.item.name||''}`).join('\n');
+  const done=()=>toast('복사했습니다');
+  if(navigator.clipboard)navigator.clipboard.writeText(txt).then(done).catch(()=>fallback(txt));else fallback(txt);
+};
+function fallback(txt){const t=$('bulk');t.closest('details').open=true;t.value=txt;t.select();toast('아래 칸 글자를 길게 눌러 복사하세요')}
+
+setType(S.type||'정기');render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+
+</body></html>
