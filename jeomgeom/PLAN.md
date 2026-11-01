@@ -20,7 +20,10 @@
 - 4번 임시 기준(사용자 지정): 번지 주소는 그 동 주민센터(행정복지센터) 위치, 같은 동 이동 15분 기본
   ※ 지금 좌표는 행정동 대표점(경계 안 한 점). 실제 주민센터 좌표표로 바꾸면 더 정확
 - 네이버 사용량 상한 완료: naverAllowed('geo'|'dir')가 false면 호출 금지(월 무료건수 80%), 호출할 때마다 countNaver(k) — RTDB usage/{YYYY-MM}/{k} 서버 증가
-- 남은 것: 4번 네이버 실제 도로시간·주민센터 정확 좌표
+- 네이버 Dynamic Map 연결 완료(Client ID 08w75rn9op, ncpKeyId, 도메인 http://nagnema3-cpu.github.io 등록): '네이버 지도로 보기' 창에 조별 번호 점·직선 동선
+- 주의: 앱 안 함수 이름 naver → nsearch로 바꿈(네이버 라이브러리 전역 naver와 충돌)
+- 남은 것: Client Secret을 Cloudflare Worker 환경변수에 넣고 Directions 5(실제 도로시간)·Geocoding 중계, countNaver('dir'|'geo') 호출, naverAllowed로 80% 상한 확인
+- 남은 것(기존): 4번 네이버 실제 도로시간·주민센터 정확 좌표
 
 ## 설계
 ### 데이터
