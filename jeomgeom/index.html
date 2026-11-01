@@ -140,7 +140,7 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
     <h2>점검 지도</h2>
     <div class="sub">점 = 점검 1건, 숫자 = 그 조가 가는 순서. 점을 누르면 네이버 지도가 열립니다.</div>
     <div class="row" id="legend" style="gap:10px;font-size:13px"></div>
-    <div style="overflow-x:auto"><svg id="map" viewBox="0 0 360 250" style="width:100%;max-width:520px;display:block;margin:0 auto" role="img" aria-label="지역별 조 배치 지도"></svg></div>
+    <div style="overflow-x:auto"><svg id="map" viewBox="0 -14 360 270" style="width:100%;max-width:520px;display:block;margin:0 auto" role="img" aria-label="지역별 조 배치 지도"></svg></div>
     <div class="sub" style="font-size:12px">점 위치는 주소의 동·읍·면 이름으로 대략 찍은 것입니다. 동 이름이 없으면 지역 가운데쯤에 찍힙니다.</div>
   </div>
   <div id="warn"></div>
@@ -226,7 +226,7 @@ function plan(date){
     alloc[pick]++;rem--;
   }
   const res=[];let no=1;const out=[];
-  active.forEach(r=>{const s=simulate(by[r],alloc[r],c);s.teams.forEach(t=>{optimize(t,r);res.push({no:no++,region:r,jobs:t})});out.push(...s.out)});
+  active.forEach(r=>{const s=simulate(by[r],alloc[r],c);improve(s.teams,r);s.teams.forEach(t=>{res.push({no:no++,region:r,jobs:t})});out.push(...s.out)});
   while(no<=TEAMS)res.push({no:no++,region:null,jobs:[]});
   return {res,out,day};
 }
@@ -293,16 +293,32 @@ function optimize(team,r){
   }
   let k=0;team.forEach(j=>{if(j.item.type==='사용')j.item=best[k++]});
 }
+function routeCost(team,r){let c=0,prev=null;team.forEach(j=>{const p=pos0(r,j.item.name);if(prev)c+=dist(prev,p);prev=p});return c}
+/* 같은 지역의 여러 조끼리 일을 맞바꿔 보고, 두 조의 이동거리 합이 줄면 바꾼 채로 둠 */
+function improve(teams,r){
+  teams.forEach(t=>optimize(t,r));if(teams.length<2)return;
+  let better=true,guard=0;
+  while(better&&guard++<50){better=false;
+    for(let a=0;a<teams.length;a++)for(let b=a+1;b<teams.length;b++)for(const x of teams[a])for(const y of teams[b]){
+      if(!((x.item.type==='사용'&&y.item.type==='사용')||x.s===y.s))continue;
+      const before=routeCost(teams[a],r)+routeCost(teams[b],r),sa=teams[a].map(j=>j.item),sb=teams[b].map(j=>j.item);
+      [x.item,y.item]=[y.item,x.item];optimize(teams[a],r);optimize(teams[b],r);
+      if(routeCost(teams[a],r)+routeCost(teams[b],r)<before-0.5)better=true;
+      else{teams[a].forEach((j,i)=>j.item=sa[i]);teams[b].forEach((j,i)=>j.item=sb[i])}
+    }
+  }
+}
+const LBL={'강화군':[68,4],'검단구':[200,4],'계양구':[305,44],'서해구':[215,250]};
 function place(r,name,k){
   const d=PLACES[r];for(const key in d)if((name||'').includes(key)){const[x,y]=d[key];return[x+(k%3-1)*9,y+Math.floor(k/3)*9]}
   const s=SHAPES[r],a=k*2.4;return[s.x+Math.cos(a)*(8+k*3),s.y+28+Math.sin(a)*(6+k*2)];
 }
 function drawMap(P){
   const used={};
-  let base='<text x="125" y="240" font-size="11" style="fill:var(--sub)">바다</text>'+REG.map(r=>{
+  let base='<text x="120" y="248" font-size="11" style="fill:var(--sub)">바다</text>'+REG.map(r=>{
     const s=SHAPES[r],ts=P.res.filter(t=>t.region===r);
     return `<a class="rg" href="${naver(r,'')}" target="_blank" rel="noopener"><path d="${s.d}" fill="${RCOL[r]}" fill-opacity="${ts.length?.18:.06}" stroke="${RCOL[r]}" stroke-width="1.5"/>
-      <text x="${s.x}" y="${s.y-14}" text-anchor="middle" font-size="13" font-weight="700" fill-opacity=".75">${r}</text></a>`;
+      <text x="${LBL[r][0]}" y="${LBL[r][1]}" text-anchor="middle" font-size="13" font-weight="700" style="fill:${RCOL[r]}">${r}</text></a>`;
   }).join('');
   let lines='',dots='';
   P.res.filter(t=>t.region).forEach(t=>{
