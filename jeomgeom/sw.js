@@ -1,4 +1,4 @@
-const C='jeomgeom-v10',FILES=['./','./index.html','./manifest.webmanifest','./app-192.png','./app-512.png','./app-180.png','./app-mask-512.png'];
+const C='jeomgeom-v11',FILES=['./','./index.html','./manifest.webmanifest','./app-192.png','./app-512.png','./app-180.png','./app-mask-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('jeomgeom')&&k!==C).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;
