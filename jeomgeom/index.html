@@ -91,6 +91,9 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
 .zbtn button{width:40px;height:40px;padding:0;font-size:20px;font-weight:700}
 .btn{display:block;text-align:center;text-decoration:none;font-weight:700;border-radius:8px;padding:10px 14px;background:#03c75a;color:#fff}
 .btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.leg{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;color:var(--sub);text-decoration:none;padding:4px 8px;margin:2px 0;border-radius:6px;background:var(--bg)}
+.leg b{color:var(--ink)}.leg .go2{color:var(--accent);font-weight:700;white-space:nowrap}
+.leg.tight{color:var(--bad);background:transparent;border:1px dashed var(--bad)}.leg.tight b{color:var(--bad)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:99px;font-size:14px}
 @media (prefers-reduced-motion:no-preference){.team{animation:in .25s ease both}@keyframes in{from{opacity:.4;transform:translateY(4px)}}}
 </style>
@@ -218,12 +221,14 @@ if(!S){
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 
 /* ---------- 스케줄 계산 ---------- */
+/* 사용점검 앞뒤로 비워 두는 이동시간(분) */
+const BUF=r=>r==='강화군'?40:20;
 const ov=(a,b)=>a.s<b.e&&b.s<a.e;
 function findSlot(team,c){
-  for(let t=c.ws;t+DUR<=c.we;t+=STEP){
+  for(let t=Math.ceil((c.ws+(c.buf||0))/STEP)*STEP;t+DUR<=c.we;t+=STEP){
     const iv={s:t,e:t+DUR};
     if(ov(iv,{s:c.ls,e:c.le}))continue;
-    if(team.some(x=>ov(iv,x)))continue;
+    if(team.some(x=>ov(iv,{s:x.s-(c.buf||0),e:x.e+(c.buf||0)})))continue;
     return t;
   }
   return null;
@@ -252,7 +257,7 @@ function plan(date){
   let rem=TEAMS-active.length;
   while(rem>0){
     let pick=null,worst=0;
-    active.forEach(r=>{const n=simulate(by[r],alloc[r],c).out.length;if(n>worst){worst=n;pick=r}});
+    active.forEach(r=>{const n=simulate(by[r],alloc[r],{...c,buf:BUF(r)}).out.length;if(n>worst){worst=n;pick=r}});
     if(!pick){ // 다 들어가면 남는 조는 일이 가장 많은 지역에 붙여 부담 나눔
       let hi=null,load=0;
       active.forEach(r=>{const l=by[r].length/alloc[r];if(l>load&&by[r].length>alloc[r]){load=l;hi=r}});
@@ -261,7 +266,7 @@ function plan(date){
     alloc[pick]++;rem--;
   }
   const res=[];let no=1;const out=[];
-  active.forEach(r=>{const s=simulate(by[r],alloc[r],c);improve(s.teams,r);s.teams.forEach(t=>{res.push({no:no++,region:r,jobs:t})});out.push(...s.out)});
+  active.forEach(r=>{const s=simulate(by[r],alloc[r],{...c,buf:BUF(r)});improve(s.teams,r);s.teams.forEach(t=>{res.push({no:no++,region:r,jobs:t})});out.push(...s.out)});
   while(no<=TEAMS)res.push({no:no++,region:null,jobs:[]});
   return {res,out,day};
 }
@@ -290,8 +295,8 @@ function render(){
   $('warn').innerHTML=P.out.length?`<div class="warn"><b>배정 못한 일정 ${P.out.length}건</b> — 다른 날로 옮기거나 근무시간을 늘려 주세요.<ul>${P.out.map(o=>`<li>${o.item.region} ${o.item.type}${o.item.time?' '+o.item.time:''} ${esc(o.item.name)} <span class="sub">(${o.why})</span></li>`).join('')}</ul></div>`:'';
   $('teams').innerHTML=P.res.map(t=>`<div class="team">
     ${t.jobs.length?`<a class="thead" href="${nmapRoute(t)}" style="background:var(--t${t.no})"><b>${t.no}조</b><span>${t.region} · ${t.jobs.length}건 <span class="go">길찾기 ›</span></span></a>`:`<header style="background:var(--sub)"><b>${t.no}조</b><span>대기</span></header>`}
-    <div class="body">${t.jobs.length?t.jobs.map(j=>`<div class="slot"><span class="time">${hm(j.s)}~${hm(j.e)}</span>${pill(j.item.type)}<a class="nav" target="_blank" rel="noopener" href="${naver(t.region,j.item.name)}" style="min-width:0;overflow-wrap:anywhere">${esc(j.item.name)||'지도 보기'}</a></div>`).join('')
-      :'<div class="idle">오늘 배정 없음</div>'}${t.jobs.length>1?`<div class="sub" style="font-size:12px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px"><b style="color:var(--ink)">추천 동선</b> ${t.jobs.map((j,i)=>(i+1)+'.'+esc(stopName(t.region,j.item.name))).join(' → ')}</div>`:''}</div></div>`).join('');
+    <div class="body">${t.jobs.length?(LG=>t.jobs.map((j,i)=>legRow(LG[i])+`<div class="slot"><span class="time">${hm(j.s)}~${hm(j.e)}</span>${pill(j.item.type)}<a class="nav" target="_blank" rel="noopener" href="${naver(t.region,j.item.name)}" style="min-width:0;overflow-wrap:anywhere">${esc(j.item.name)||'지도 보기'}</a></div>`).join(''))(legs(t))
+      :'<div class="idle">오늘 배정 없음</div>'}${t.jobs.length?`<div class="sub" style="font-size:12px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px"><b style="color:var(--ink)">추천 동선</b> 출발 → ${t.jobs.map((j,i)=>(i+1)+'.'+esc(stopName(t.region,j.item.name))).join(' → ')} · <b style="color:var(--ink)">총 이동 약 ${legs(t).reduce((a,L)=>a+L.min,0)}분</b></div>`:''}</div></div>`).join('');
   ['ws','we','ls','le'].forEach(k=>$(k).value=S.cfg[k]);
   drawMap(P);
 }
@@ -370,6 +375,16 @@ function nmapRoute(t){
   p.slice(0,-1).slice(0,5).forEach((v,i)=>q+=`&v${i+1}lat=${v.ll[0]}&v${i+1}lng=${v.ll[1]}&v${i+1}name=${e(v.n)}`);
   return 'nmap://route/car?'+q+'&appname=jeomgeom.schedule';
 }
+/* 이동 예상: 직선거리 × 1.35(도로 굽음) ÷ 속도(강화 40km/h, 시내 25km/h) + 주차 5분 */
+function km(a,b){const R=6371,r=Math.PI/180,dl=(b[0]-a[0])*r,dn=(b[1]-a[1])*r,x=Math.sin(dl/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+function legs(t){
+  const st=START();let prev={ll:st.ll,n:st.name,end:m(S.cfg.ws)};
+  return t.jobs.map(j=>{const ll=LL(t.region,j.item.name),n=j.item.name||stopName(t.region,j.item.name);
+    const d=km(prev.ll,ll)*1.35,min=Math.round(d/(t.region==='강화군'?40:25)*60)+5,gap=j.s-prev.end;
+    const e=encodeURIComponent,url=`nmap://route/car?slat=${prev.ll[0]}&slng=${prev.ll[1]}&sname=${e(prev.n)}&dlat=${ll[0]}&dlng=${ll[1]}&dname=${e(n)}&appname=jeomgeom.schedule`;
+    const L={from:prev.n,km:d,min,gap,url,tight:gap<min};prev={ll,n,end:j.e};return L});
+}
+const legRow=L=>`<a class="leg${L.tight?' tight':''}" href="${L.url}"><span>↓ 이동 약 <b>${L.min}분</b> · ${L.km.toFixed(1)}km${L.tight?` · <b>시간 빠듯</b>(틈 ${Math.max(0,L.gap)}분)`:''}</span><span class="go2">네이버 길 ›</span></a>`;
 const routeBtn=t=>{const u=t.jobs.length?nmapRoute(t):null;return u?`<a class="btn" href="${u}">네이버 지도 앱으로 ${t.no}조 동선 보기</a>`:''};
 /* 구 확대 창 */
 let POP=null,VB=null,VB0=null;
@@ -392,7 +407,7 @@ function drawPop(){
   $('popMap').innerHTML=ctx+ds+lb+(inR?offMark(fs):'')+routeLines(P,spread(P,fs*1.1),ts,true,fs,inR);
   $('popTeams').innerHTML=ts.length?ts.map(t=>`<div class="list" style="gap:6px;padding:8px 0;border-top:1px solid var(--line)">
     <div><b style="color:var(--t${t.no})">● ${t.no}조</b> <span class="sub">${t.jobs.length}곳</span></div>
-    <div style="font-size:14px">${t.jobs.map((j,i)=>`${i+1}. ${hm(j.s)} <a class="nav" href="${naver(r,j.item.name)}" target="_blank" rel="noopener">${esc(j.item.name)||stopName(r,j.item.name)}</a>`).join('<br>')}</div>
+    <div style="font-size:14px">${(LG=>t.jobs.map((j,i)=>legRow(LG[i])+`<div>${i+1}. ${hm(j.s)} <a class="nav" href="${naver(r,j.item.name)}" target="_blank" rel="noopener">${esc(j.item.name)||stopName(r,j.item.name)}</a></div>`).join(''))(legs(t))}</div>
     ${routeBtn(t)}</div>`).join(''):'<div class="idle">이 날 이 구에는 배정된 조가 없습니다.</div>';
 }
 function zoom(f){const[x,y,w,h]=VB;const nw=Math.max(VB0[2]*.15,Math.min(VB0[2],w*f)),nh=nw*h/w;VB=[x+(w-nw)/2,y+(h-nh)/2,nw,nh];drawPop()}
@@ -523,7 +538,7 @@ $('bulkAdd').onclick=()=>{
 
 $('copy').onclick=()=>{
   const P=last;let txt=`${dLabel(S.date)} 점검 스케줄\n`;
-  P.res.filter(t=>t.region).forEach(t=>{txt+=`\n[${t.no}조] ${t.region}\n`;t.jobs.forEach(j=>txt+=`${hm(j.s)}~${hm(j.e)} ${j.item.type==='정기'?'정기검사':'사용점검'} ${j.item.name||''}\n`)});
+  P.res.filter(t=>t.region).forEach(t=>{txt+=`\n[${t.no}조] ${t.region}\n`;const LG=legs(t);t.jobs.forEach((j,i)=>txt+=`  (이동 약 ${LG[i].min}분)\n${hm(j.s)}~${hm(j.e)} ${j.item.type==='정기'?'정기검사':'사용점검'} ${j.item.name||''}\n`)});
   if(P.out.length)txt+=`\n※ 배정 못함 ${P.out.length}건\n`+P.out.map(o=>`- ${o.item.region} ${o.item.type} ${o.item.time||''} ${o.item.name||''}`).join('\n');
   const done=()=>toast('복사했습니다');
   if(navigator.clipboard)navigator.clipboard.writeText(txt).then(done).catch(()=>fallback(txt));else fallback(txt);
