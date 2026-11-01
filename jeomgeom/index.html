@@ -111,6 +111,12 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
 .pad button{height:64px;font-size:24px;border-radius:50%;width:64px;justify-self:center;font-variant-numeric:tabular-nums}
 .auto{flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--ink);margin-top:6px}.auto input{width:auto}
 .shake{animation:sh .35s}@keyframes sh{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}
+.qrow{display:grid;grid-template-columns:84px 1fr auto;gap:8px;align-items:center;font-size:12px;font-variant-numeric:tabular-nums}
+.qrow .bar{position:relative;height:8px;border-radius:99px;background:var(--line)}
+.qrow .bar i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:var(--ok)}
+.qrow .bar b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad)}
+.qrow.stop .bar i{background:var(--bad)}.qrow.stop{color:var(--bad)}
+.qwarn{font-size:12px;color:var(--bad);border:1px dashed var(--bad);border-radius:8px;padding:6px 8px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:99px;font-size:14px}
 @media (prefers-reduced-motion:no-preference){.team{animation:in .25s ease both}@keyframes in{from{opacity:.4;transform:translateY(4px)}}}
 </style>
@@ -215,6 +221,15 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
       <label>기본 검사시간(분)<input type="number" id="cDur" min="10" step="10" inputmode="numeric"></label>
       <label>같은 동 안 이동(분)<input type="number" id="cSame" min="0" step="5" inputmode="numeric"></label>
       <span></span>
+    </div>
+    <div class="list" style="gap:6px;border-top:1px solid var(--line);padding-top:10px">
+      <b>네이버 지도 사용량 (이번 달 · 모든 폰 합산)</b>
+      <div id="quota"></div>
+      <div class="grid2">
+        <label>주소 찾기 월 무료 건수<input type="number" id="qGeo" min="100" step="100" inputmode="numeric"></label>
+        <label>길 이동시간 월 무료 건수<input type="number" id="qDir" min="100" step="100" inputmode="numeric"></label>
+      </div>
+      <div class="sub" style="font-size:12px">무료 건수의 <b>80%</b>가 되면 자동으로 네이버 호출을 멈춥니다. 네이버 클라우드 요금 탭에서 본 숫자로 바꿔 넣어 주세요. (네이버 연결 전에는 0건으로 보입니다)</div>
     </div>
     <div class="sub" style="font-size:12px">주소의 번지는 그 동 주민센터(행정복지센터) 위치로 찍습니다. 같은 동 안에서는 이동시간을 위 값으로, 다른 동은 거리로 어림합니다. 조는 구를 넘나들며 가장 짧은 동선으로 나눕니다.</div>
     <div class="grid2">
@@ -355,7 +370,7 @@ function plan(date){
 const DBURL='https://tokdama-default-rtdb.asia-southeast1.firebasedatabase.app';
 const RP=DBURL+'/tokdama/jeomgeom/seobu';
 let BASE=null,online=false,pushing=false,dirty=false,pushT=null,REMOTE_PIN=null;
-const pickCfg=c=>({ws:c.ws,we:c.we,ls:c.ls,le:c.le,teams:+c.teams||5,dur:+c.dur||60,same:c.same==null?15:+c.same,start:c.start||null});
+const pickCfg=c=>({ws:c.ws,we:c.we,ls:c.ls,le:c.le,teams:+c.teams||5,dur:+c.dur||60,same:c.same==null?15:+c.same,qGeo:+c.qGeo||3000,qDir:+c.qDir||3000,start:c.start||null});
 const normE=v=>Object.assign({date:v.date,region:v.region,type:v.type,time:v.time||'',name:v.name||''},v.dur?{dur:+v.dur}:{},v.sample?{sample:true}:{});
 function snapshot(){const e={};S.entries.forEach(x=>e[x.id]=normE(x));return{entries:e,cfg:pickCfg(S.cfg),done:JSON.parse(JSON.stringify(S.done||{}))}}
 async function dbGet(){const r=await fetch(RP+'.json',{cache:'no-store'});if(!r.ok)throw new Error(r.status);return(await r.json())||{}}
@@ -376,11 +391,11 @@ async function push(){
 function applyRemote(d){
   const rem={entries:{},cfg:pickCfg({...S.cfg,...(d.cfg||{}),start:(d.cfg||{}).start||null}),done:d.done||{}};
   for(const id in d.entries||{})rem.entries[id]=normE(d.entries[id]);
-  REMOTE_PIN=d.pin||null;
+  REMOTE_PIN=d.pin||null;if(d.usage){S.usage=d.usage;showQuota()}
   if(REMOTE_PIN&&REMOTE_PIN!==S.pinHash){S.pinHash=REMOTE_PIN;checkAuto()}
   const same=BASE&&JSON.stringify(rem)===JSON.stringify(BASE);BASE=rem;if(same)return;
   S.entries=Object.keys(rem.entries).sort().map(id=>({id,...rem.entries[id]}));
-  const c=rem.cfg;Object.assign(S.cfg,{ws:c.ws,we:c.we,ls:c.ls,le:c.le,teams:c.teams,dur:c.dur,same:c.same});if(c.start)S.cfg.start=c.start;else delete S.cfg.start;
+  const c=rem.cfg;Object.assign(S.cfg,{ws:c.ws,we:c.we,ls:c.ls,le:c.le,teams:c.teams,dur:c.dur,same:c.same,qGeo:c.qGeo,qDir:c.qDir});if(c.start)S.cfg.start=c.start;else delete S.cfg.start;
   S.done=JSON.parse(JSON.stringify(rem.done));localSave();render();showStart();
 }
 async function connect(){
@@ -394,6 +409,23 @@ async function connect(){
 async function pull(){if(!BASE||pushing)return;if(dirty){push();return}try{applyRemote(await dbGet());setNet(true)}catch(e){setNet(false)}}
 setInterval(pull,8000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
+
+/* ===== 네이버 사용량 상한 (무료 이용량의 80%) ===== */
+const YM=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+const QLIM=k=>k==='geo'?(+S.cfg.qGeo||3000):(+S.cfg.qDir||3000);
+const QUSE=k=>((S.usage||{})[YM()]||{})[k]||0;
+/* 네이버를 불러도 되는지: 이번 달 사용량이 무료 이용량의 80% 미만일 때만 */
+function naverAllowed(k){return QUSE(k)<Math.floor(QLIM(k)*0.8)}
+/* 네이버를 1번 부를 때마다 기록 (모든 폰 합산) */
+async function countNaver(k){S.usage=S.usage||{};const ym=YM();S.usage[ym]=S.usage[ym]||{};S.usage[ym][k]=(S.usage[ym][k]||0)+1;localSave();showQuota();
+  if(online){try{await dbPatch({[`usage/${ym}/${k}`]:{'.sv':{increment:1}}})}catch(e){}}}
+function showQuota(){const el=$('quota');if(!el)return;
+  const row=(k,lab)=>{const u=QUSE(k),L=QLIM(k),p=Math.round(u/L*100),stop=!naverAllowed(k);
+    return `<div class="qrow${stop?' stop':''}"><span>${lab}</span><span class="bar"><i style="width:${Math.min(100,p)}%"></i><b style="left:80%"></b></span><span>${u.toLocaleString()} / ${L.toLocaleString()}건 (${p}%)</span></div>`};
+  const stop=!naverAllowed('geo')||!naverAllowed('dir');
+  el.innerHTML=row('geo','주소 찾기')+row('dir','길 이동시간')+(stop?'<div class="qwarn">무료 이용량의 80%에 닿아 이번 달은 네이버 호출을 멈추고 어림값으로 계산합니다. 다음 달 1일에 다시 켜집니다.</div>':'');
+  $('qGeo').value=QLIM('geo');$('qDir').value=QLIM('dir');
+}
 
 /* ===== 핀번호 잠금 ===== */
 async function sha(s){s='jg:'+s;try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return 'x'+h}}
@@ -461,6 +493,7 @@ function render(){
       :'<div class="idle">오늘 배정 없음</div>'}${t.jobs.length?`<div class="sub" style="font-size:12px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px"><b style="color:var(--ink)">추천 동선</b> 출발 → ${t.jobs.map((j,i)=>(i+1)+'.'+esc(stopName(j.item.region,j.item.name))).join(' → ')} · <b style="color:var(--ink)">총 이동 약 ${legs(t).reduce((a,L)=>a+L.min,0)}분</b></div>`:''}</div></div>`).join('');
   ['ws','we','ls','le'].forEach(k=>$(k).value=S.cfg[k]);
   $('me').value=S.me||'';
+  showQuota();
   $('cTeams').value=NT();$('cDur').value=DEFDUR();$('cSame').value=SAMEMIN();
   $('subline').textContent=`${NT()}개 조 · 서해구·검단구·계양구·강화군 · 기본 검사 ${DEFDUR()}분 · 구를 넘나드는 효율 동선`;
   if($('me').options.length!==NT()+1)$('me').innerHTML='<option value="">전체 보기</option>'+Array.from({length:NT()},(_,i)=>`<option>${i+1}</option>`).join('');$('me').value=S.me||'';
@@ -639,7 +672,7 @@ const shift=n=>{const d=new Date(S.date+'T00:00');d.setDate(d.getDate()+n);d.set
 $('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);
 $('addSample').onclick=()=>{S.entries=S.entries.filter(e=>!e.sample).concat(makeSample(S.date));save();render();toast('예시 15건(조별 3곳)을 넣었습니다')};
 $('clearSample').onclick=()=>{S.entries=S.entries.filter(e=>!e.sample);save();render();toast('예시를 지웠습니다')};
-[['cTeams','teams',1,20],['cDur','dur',10,600],['cSame','same',0,120]].forEach(([id,k,lo,hi])=>$(id).onchange=e=>{const v=Math.round(+e.target.value);if(isNaN(v)||v<lo||v>hi){toast(`${lo}~${hi} 사이로 넣어 주세요`);render();return}S.cfg[k]=v;save();render()});
+[['qGeo','qGeo',100,10000000],['qDir','qDir',100,10000000],['cTeams','teams',1,20],['cDur','dur',10,600],['cSame','same',0,120]].forEach(([id,k,lo,hi])=>$(id).onchange=e=>{const v=Math.round(+e.target.value);if(isNaN(v)||v<lo||v>hi){toast(`${lo}~${hi} 사이로 넣어 주세요`);render();return}S.cfg[k]=v;save();render()});
 ['ws','we','ls','le'].forEach(k=>$(k).onchange=e=>{if(e.target.value){S.cfg[k]=e.target.value;save();render()}});
 
 const regionOf=s=>{s=String(s||'');return /강화/.test(s)?'강화군':/계양/.test(s)?'계양구':/검단/.test(s)?'검단구':/서해|서구/.test(s)?'서해구':(()=>{for(const r of REG)if(findDong(r,s))return r;return null})()};
