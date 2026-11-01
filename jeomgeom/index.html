@@ -134,7 +134,7 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
   </div>
 
   <div id="sampleBanner" class="banner" hidden>
-    <span>지금 보이는 일정은 <b>예시</b>입니다.</span>
+    <span><b>예시</b> 일정이 들어 있습니다. 지우면 모든 폰에서 지워집니다.</span>
     <button id="clearSample">예시 지우기</button>
   </div>
 
@@ -154,6 +154,7 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
     </div>
     <label>고객 / 주소 (선택)<input id="name" placeholder="예: 김OO 강화읍 갑곶리"></label>
     <button class="primary" id="add">추가</button>
+    <button id="addSample">예시 일정 넣기 (조별 4곳 · 이 날짜)</button>
     <details>
       <summary>여러 건 한 번에 붙여넣기</summary>
       <div class="list" style="margin-top:8px">
@@ -252,15 +253,14 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 let S=null;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S){
-  const d=today();
-  const ex=[['서해구','정기','09:00','김OO 가정동'],['서해구','정기','09:00','이OO 석남동'],['서해구','정기','14:00','박OO 가좌동'],['서해구','사용','','청라 상가 A동'],['서해구','사용','','청라 상가 B동'],
-    ['검단구','정기','10:00','최OO 마전동'],['검단구','사용','','당하동 아파트'],['검단구','사용','','원당동 식당'],
-    ['계양구','정기','13:00','정OO 작전동'],['계양구','사용','','계산동 빌라'],['계양구','사용','','효성동 공장'],
-    ['강화군','정기','11:00','한OO 강화읍'],['강화군','사용','','길상면 펜션']];
-  S={date:d,type:'정기',cfg:{ws:'09:00',we:'18:00',ls:'12:00',le:'13:00'},
-     entries:ex.map(([region,type,time,name])=>({id:uid(),date:d,region,type,time,name,sample:true}))};
-}
+/* 예시: 5개 조 × 4곳 (모두 정기검사, 고객 시간 09:00·11:20·14:00·16:20) */
+const SAMPLE=[['서해구','09:00','청라동 상가'],['서해구','11:20','연희동 빌라'],['서해구','14:00','경서동 주택'],['서해구','16:20','검암동 공장'],
+ ['서해구','09:00','가정동 아파트'],['서해구','11:20','석남동 상가'],['서해구','14:00','가좌동 공장'],['서해구','16:20','신현동 주택'],
+ ['검단구','09:00','마전동 상가'],['검단구','11:20','당하동 아파트'],['검단구','14:00','원당동 식당'],['검단구','16:20','불로동 주택'],
+ ['계양구','09:00','작전동 빌라'],['계양구','11:20','계산동 상가'],['계양구','14:00','임학동 주택'],['계양구','16:20','박촌동 공장'],
+ ['강화군','09:00','강화읍 갑곶리 펜션'],['강화군','11:20','선원면 카페'],['강화군','14:00','불은면 주택'],['강화군','16:20','길상면 창고']];
+const makeSample=date=>SAMPLE.map((x,i)=>({id:'0ex'+String(i).padStart(2,'0'),date,region:x[0],type:'정기',time:x[1],name:x[2],sample:true}));
+if(!S){S={date:today(),type:'정기',cfg:{ws:'09:00',we:'18:00',ls:'12:00',le:'13:00'},entries:makeSample(today())}}
 const localSave=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const save=()=>{localSave();dirty=true;clearTimeout(pushT);pushT=setTimeout(()=>{if(online)push()},300)};
 
@@ -320,8 +320,8 @@ const DBURL='https://tokdama-default-rtdb.asia-southeast1.firebasedatabase.app';
 const RP=DBURL+'/tokdama/jeomgeom/seobu';
 let BASE=null,online=false,pushing=false,dirty=false,pushT=null,REMOTE_PIN=null;
 const pickCfg=c=>({ws:c.ws,we:c.we,ls:c.ls,le:c.le,start:c.start||null});
-const normE=v=>({date:v.date,region:v.region,type:v.type,time:v.time||'',name:v.name||''});
-function snapshot(){const e={};S.entries.filter(x=>!x.sample).forEach(x=>e[x.id]=normE(x));return{entries:e,cfg:pickCfg(S.cfg),done:JSON.parse(JSON.stringify(S.done||{}))}}
+const normE=v=>Object.assign({date:v.date,region:v.region,type:v.type,time:v.time||'',name:v.name||''},v.sample?{sample:true}:{});
+function snapshot(){const e={};S.entries.forEach(x=>e[x.id]=normE(x));return{entries:e,cfg:pickCfg(S.cfg),done:JSON.parse(JSON.stringify(S.done||{}))}}
 async function dbGet(){const r=await fetch(RP+'.json',{cache:'no-store'});if(!r.ok)throw new Error(r.status);return(await r.json())||{}}
 async function dbPatch(o){const r=await fetch(RP+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)});if(!r.ok)throw new Error(r.status)}
 function setNet(ok){online=ok;const n=$('net');if(!n)return;n.className='net '+(ok?'on':'off');n.textContent=ok?'● 함께 보기 연결됨 · 모든 폰에 자동 반영':'● 연결 안 됨 · 이 기기에만 저장 중'}
@@ -350,7 +350,9 @@ function applyRemote(d){
 async function connect(){
   try{const d=await dbGet();setNet(true);
     if(d.entries||d.cfg||d.done||d.pin)applyRemote(d);
-    else{BASE={entries:{},cfg:{},done:{}};S.entries=S.entries.filter(e=>!e.sample);render();await push()}
+    else{BASE={entries:{},cfg:{},done:{}};S.entries=S.entries.filter(e=>!e.sample)}
+    if(!d.seeded){S.entries=S.entries.filter(e=>!e.sample).concat(makeSample(S.date));render();try{await dbPatch({seeded:true})}catch(e){}}
+    render();await push()
   }catch(e){setNet(false);setTimeout(connect,30000)}
 }
 async function pull(){if(!BASE||pushing)return;if(dirty){push();return}try{applyRemote(await dbGet());setNet(true)}catch(e){setNet(false)}}
@@ -507,9 +509,9 @@ function legs(t){
   return t.jobs.map(j=>{const ll=LL(t.region,j.item.name),n=j.item.name||stopName(t.region,j.item.name);
     const d=km(prev.ll,ll)*1.35,min=Math.round(d/(t.region==='강화군'?40:25)*60)+5,gap=j.s-prev.end;
     const e=encodeURIComponent,url=`nmap://route/car?slat=${prev.ll[0]}&slng=${prev.ll[1]}&sname=${e(prev.n)}&dlat=${ll[0]}&dlng=${ll[1]}&dname=${e(n)}&appname=jeomgeom.schedule`;
-    const L={from:prev.n,km:d,min,gap,url,tight:gap<min};prev={ll,n,end:j.e};return L});
+    const first=prev.n===st.name&&prev.end===m(S.cfg.ws);const L={from:prev.n,km:d,min,gap,url,first,dep:j.s-min,tight:!first&&gap<min};prev={ll,n,end:j.e};return L});
 }
-const legRow=L=>`<a class="leg${L.tight?' tight':''}" href="${L.url}"><span>↓ 이동 약 <b>${L.min}분</b> · ${L.km.toFixed(1)}km${L.tight?` · <b>시간 빠듯</b>(틈 ${Math.max(0,L.gap)}분)`:''}</span><span class="go2">네이버 길 ›</span></a>`;
+const legRow=L=>`<a class="leg${L.tight?' tight':''}" href="${L.url}"><span>↓ 이동 약 <b>${L.min}분</b> · ${L.km.toFixed(1)}km${L.first?` · 사무실에서 <b>${hm(Math.max(0,L.dep))}</b> 출발`:''}${L.tight?` · <b>시간 빠듯</b>(틈 ${Math.max(0,L.gap)}분)`:''}</span><span class="go2">네이버 길 ›</span></a>`;
 const routeBtn=t=>{const u=t.jobs.length?nmapRoute(t):null;return u?`<a class="btn" href="${u}">네이버 지도 앱으로 ${t.no}조 동선 보기</a>`:''};
 /* 구 확대 창 */
 let POP=null,VB=null,VB0=null;
@@ -586,6 +588,7 @@ $('list').onclick=e=>{const id=e.target.dataset.del;if(!id)return;S.entries=S.en
 $('date').onchange=e=>{S.date=e.target.value||today();save();render()};
 const shift=n=>{const d=new Date(S.date+'T00:00');d.setDate(d.getDate()+n);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());S.date=d.toISOString().slice(0,10);save();render()};
 $('prev').onclick=()=>shift(-1);$('next').onclick=()=>shift(1);
+$('addSample').onclick=()=>{S.entries=S.entries.filter(e=>!e.sample).concat(makeSample(S.date));save();render();toast('예시 20건(조별 4곳)을 넣었습니다')};
 $('clearSample').onclick=()=>{S.entries=S.entries.filter(e=>!e.sample);save();render();toast('예시를 지웠습니다')};
 ['ws','we','ls','le'].forEach(k=>$(k).onchange=e=>{if(e.target.value){S.cfg[k]=e.target.value;save();render()}});
 
