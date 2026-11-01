@@ -58,8 +58,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .x{border:0;background:none;color:var(--sub);padding:4px 8px}
 .teams{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .team{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.team header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:#fff}
-.team header b{font-size:17px}
+.team header,.team .thead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:#fff}
+.thead{text-decoration:none}.thead .go{font-size:12px;font-weight:700;background:rgba(255,255,255,.22);border-radius:99px;padding:2px 8px;margin-left:4px}
+.thead:active{filter:brightness(.92)}
+.team header b,.team .thead b{font-size:17px}
 .team .body{padding:6px 14px 12px}
 .slot{display:grid;grid-template-columns:96px auto 1fr;gap:8px;align-items:center;padding:6px 0;border-top:1px dashed var(--line);font-size:14px}
 .slot:first-child{border-top:0}
@@ -157,7 +159,16 @@ details summary{cursor:pointer;color:var(--sub);font-size:13px}
     <div style="overflow-x:auto"><svg id="map" viewBox="-75 -70 780 640" style="width:100%;max-width:560px;display:block;margin:0 auto" role="img" aria-label="지역별 조 배치 지도"></svg></div>
     <div class="sub" style="font-size:12px">경계: 통계청 행정동 경계(2026.10, vuski/admdongkor, CC BY 4.0). 점은 주소의 동·읍·면 가운데에 찍힙니다.</div>
   </div>
+  <div class="card" style="gap:8px">
+    <div class="row" style="justify-content:space-between"><h2>동선 출발지</h2><button id="stReset">기본값으로</button></div>
+    <div class="grid2">
+      <label>이름<input id="stName"></label>
+      <label>주소 또는 좌표<input id="stAddr" placeholder="예: 서해구 심곡동 / 37.5446,126.6745"></label>
+    </div>
+    <div class="sub" style="font-size:12px" id="stInfo"></div>
+  </div>
   <div id="warn"></div>
+  <div class="sub" style="font-size:13px">조 색깔 띠를 누르면 네이버 지도 앱에서 그 조 동선(출발지 → 1번 → 2번 …)이 바로 열립니다.</div>
   <div class="teams" id="teams"></div>
 
   <details class="card">
@@ -278,7 +289,7 @@ function render(){
   $('stats').innerHTML=`<span>정기 <b>${nReg}</b></span><span>사용 <b>${day.length-nReg}</b></span><span>출동 조 <b>${used}</b>/5</span><span>배정 못함 <b style="color:${P.out.length?'var(--bad)':'var(--ok)'}">${P.out.length}</b></span>`;
   $('warn').innerHTML=P.out.length?`<div class="warn"><b>배정 못한 일정 ${P.out.length}건</b> — 다른 날로 옮기거나 근무시간을 늘려 주세요.<ul>${P.out.map(o=>`<li>${o.item.region} ${o.item.type}${o.item.time?' '+o.item.time:''} ${esc(o.item.name)} <span class="sub">(${o.why})</span></li>`).join('')}</ul></div>`:'';
   $('teams').innerHTML=P.res.map(t=>`<div class="team">
-    <header style="background:${t.region?'var(--t'+t.no+')':'var(--sub)'}"><b>${t.no}조</b><span>${t.region||'대기'}${t.region?' · '+t.jobs.length+'건':''}</span></header>
+    ${t.jobs.length?`<a class="thead" href="${nmapRoute(t)}" style="background:var(--t${t.no})"><b>${t.no}조</b><span>${t.region} · ${t.jobs.length}건 <span class="go">길찾기 ›</span></span></a>`:`<header style="background:var(--sub)"><b>${t.no}조</b><span>대기</span></header>`}
     <div class="body">${t.jobs.length?t.jobs.map(j=>`<div class="slot"><span class="time">${hm(j.s)}~${hm(j.e)}</span>${pill(j.item.type)}<a class="nav" target="_blank" rel="noopener" href="${naver(t.region,j.item.name)}" style="min-width:0;overflow-wrap:anywhere">${esc(j.item.name)||'지도 보기'}</a></div>`).join('')
       :'<div class="idle">오늘 배정 없음</div>'}${t.jobs.length>1?`<div class="sub" style="font-size:12px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px"><b style="color:var(--ink)">추천 동선</b> ${t.jobs.map((j,i)=>(i+1)+'.'+esc(stopName(t.region,j.item.name))).join(' → ')}</div>`:''}</div></div>`).join('');
   ['ws','we','ls','le'].forEach(k=>$(k).value=S.cfg[k]);
@@ -301,6 +312,11 @@ function findDong(r,text){
   for(const d of ds)for(const k of dongKeys(d.n))if(k.length>=2&&text.includes(k))return d;
   return null;
 }
+const DEF_START={name:'한국전기안전공사 인천서부지사',addr:'인천 서해구 탁옥로 37 (심곡동)',ll:[37.5446,126.6745]};
+const PK=Math.cos(37.6*Math.PI/180);
+const toXY=ll=>[(ll[1]-126.25)*PK*1600,(37.80-ll[0])*1600];
+const START=()=>S.cfg.start||DEF_START;
+const OFF=()=>toXY(START().ll);
 const RC=r=>{const b=GEO.R[r].b;return[(b[0]+b[2])/2,(b[1]+b[3])/2]};
 const RLL=r=>{const ds=GEO.D[r];return[ds.reduce((a,d)=>a+d.ll[0],0)/ds.length,ds.reduce((a,d)=>a+d.ll[1],0)/ds.length]};
 function pos0(r,name){const d=findDong(r,name);return d?d.c:RC(r)}
@@ -313,39 +329,48 @@ function spread(P,step){
     const[x,y]=d?d.c:RC(t.region);if(k===1)return[x,y];const a=k*2.1;return[x+Math.cos(a)*step*(1+k*.25),y+Math.sin(a)*step*(1+k*.25)]})});
   return out;
 }
-function routeLines(P,pts,ts,r,fs){
+function routeLines(P,pts,ts,r,fs,fromOff){
   let lines='',dots='';
   P.res.filter(t=>t.region&&(!ts||ts.includes(t))).forEach(t=>{
-    const c=`var(--t${t.no})`,p=pts[t.no];
+    const c=`var(--t${t.no})`,p=fromOff?[OFF()].concat(pts[t.no]):pts[t.no];
     if(p.length>1)lines+=`<polyline points="${p.map(q=>q.join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="${fs*.22}" stroke-dasharray="${fs*.5} ${fs*.35}" stroke-linejoin="round"/>`;
-    p.forEach((q,i)=>{const j=t.jobs[i];const inner=`<title>${t.no}조 ${i+1}번째 · ${hm(j.s)} ${j.item.type} ${esc(j.item.name)}</title><circle cx="${q[0]}" cy="${q[1]}" r="${fs*.8}" fill="${c}" stroke="var(--card)" stroke-width="${fs*.15}"/><text x="${q[0]}" y="${q[1]+fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="700" style="fill:#fff">${i+1}</text>`;
+    (fromOff?p.slice(1):p).forEach((q,i)=>{const j=t.jobs[i];const inner=`<title>${t.no}조 ${i+1}번째 · ${hm(j.s)} ${j.item.type} ${esc(j.item.name)}</title><circle cx="${q[0]}" cy="${q[1]}" r="${fs*.8}" fill="${c}" stroke="var(--card)" stroke-width="${fs*.15}"/><text x="${q[0]}" y="${q[1]+fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="700" style="fill:#fff">${i+1}</text>`;
       dots+=r?`<a href="${naver(t.region,j.item.name)}" target="_blank" rel="noopener">${inner}</a>`:`<g>${inner}</g>`});
   });
   return lines+dots;
 }
-const LBL={'강화군':[170,150],'검단구':[505,246],'계양구':[640,320],'서해구':[512,552]};
+const offMark=(fs)=>{const[x,y]=OFF();return `<g><title>출발지 · ${esc(START().name)}</title><rect x="${x-fs*.8}" y="${y-fs*.8}" width="${fs*1.6}" height="${fs*1.6}" rx="${fs*.3}" fill="var(--ink)" stroke="var(--card)" stroke-width="${fs*.15}"/><text x="${x}" y="${y+fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="700" style="fill:var(--card)">출</text></g>`};
+const PAN={'강화군':[0,0],'검단구':[1,0],'서해구':[0,1],'계양구':[1,1]},PW=400;
 function drawMap(P){
-  const pts=spread(P,14);
-  let base=REG.map(r=>{
-    const ts=P.res.filter(t=>t.region===r),op=ts.length?.16:.05;
-    return `<g class="rg" data-r="${r}" tabindex="0" role="button" aria-label="${r} 자세히 보기">${GEO.D[r].map(d=>`<path d="${d.p}" fill="${RCOL[r]}" fill-opacity="${op}" stroke="${RCOL[r]}" stroke-opacity=".45" stroke-width=".7" vector-effect="non-scaling-stroke"/>`).join('')}
-      <path d="${GEO.R[r].o}" fill="none" stroke="${RCOL[r]}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
-      <text x="${LBL[r][0]}" y="${LBL[r][1]}" text-anchor="middle" font-size="26" font-weight="700" class="halo" style="fill:${RCOL[r]};stroke-width:6">${r}</text></g>`;
+  $('map').setAttribute('viewBox','0 0 800 800');
+  const ox=OFF();
+  $('map').innerHTML=REG.map(r=>{
+    const ts=P.res.filter(t=>t.region===r),op=ts.length?.16:.05,b=GEO.R[r].b,w=b[2]-b[0],h=b[3]-b[1],m=Math.max(w,h)*.05;
+    const X=PAN[r][0]*PW,Y=PAN[r][1]*PW,vw=w+2*m,vh=h+2*m,iw=PW-28,ih=PW-70,k=Math.min(iw/vw,ih/vh),fs=22/k;
+    const inR=ox[0]>=b[0]-m&&ox[0]<=b[2]+m&&ox[1]>=b[1]-m&&ox[1]<=b[3]+m;
+    return `<g class="rg" data-r="${r}" tabindex="0" role="button" aria-label="${r} 자세히 보기">
+      <rect x="${X+6}" y="${Y+6}" width="${PW-12}" height="${PW-12}" rx="16" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5"/>
+      <text x="${X+24}" y="${Y+40}" font-size="24" font-weight="700" style="fill:${RCOL[r]}">${r}</text>
+      <text x="${X+PW-24}" y="${Y+40}" text-anchor="end" font-size="18" style="fill:var(--sub)">${ts.length?ts.map(t=>t.no).join('·')+'조':'출동 없음'} ›</text>
+      <svg x="${X+14}" y="${Y+56}" width="${iw}" height="${ih}" viewBox="${b[0]-m} ${b[1]-m} ${vw} ${vh}" overflow="hidden">
+        ${GEO.D[r].map(d=>`<path d="${d.p}" fill="${RCOL[r]}" fill-opacity="${op}" stroke="${RCOL[r]}" stroke-opacity=".45" stroke-width=".7" vector-effect="non-scaling-stroke"/>`).join('')}
+        <path d="${GEO.R[r].o}" fill="none" stroke="${RCOL[r]}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+        ${inR?offMark(fs):''}${routeLines(P,spread(P,fs*1.1),ts,false,fs,inR)}
+      </svg></g>`;
   }).join('');
-  $('map').innerHTML=base+routeLines(P,pts,null,false,17);
-  $('legend').innerHTML=P.res.filter(t=>t.region).map(t=>`<span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12"><circle cx="6" cy="6" r="6" fill="var(--t${t.no})"/></svg>${t.no}조 ${t.region}</span>`).join('')||'<span class="sub">일정을 넣으면 점이 찍힙니다</span>';
+  $('legend').innerHTML=P.res.filter(t=>t.region).map(t=>`<span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12"><circle cx="6" cy="6" r="6" fill="var(--t${t.no})"/></svg>${t.no}조 ${t.region}</span>`).join('')+'<span style="display:flex;align-items:center;gap:4px"><svg width="12" height="12"><rect width="12" height="12" rx="3" fill="var(--ink)"/></svg>출발지</span>';
   if(!$('pop').hidden)drawPop();
 }
 /* 네이버 지도 앱 길찾기: 출발=1번, 도착=마지막, 사이=경유지(최대 5곳) */
 function nmapRoute(t){
-  if(t.jobs.length<2)return null;
-  const p=t.jobs.map(j=>({ll:LL(t.region,j.item.name),n:j.item.name||stopName(t.region,j.item.name)}));
-  const e=encodeURIComponent,s=p[0],d=p[p.length-1];
-  let q=`slat=${s.ll[0]}&slng=${s.ll[1]}&sname=${e(s.n)}&dlat=${d.ll[0]}&dlng=${d.ll[1]}&dname=${e(d.n)}`;
-  p.slice(1,-1).slice(0,5).forEach((v,i)=>q+=`&v${i+1}lat=${v.ll[0]}&v${i+1}lng=${v.ll[1]}&v${i+1}name=${e(v.n)}`);
+  if(!t.jobs.length)return '#';
+  const st=START(),p=t.jobs.map(j=>({ll:LL(t.region,j.item.name),n:j.item.name||stopName(t.region,j.item.name)}));
+  const e=encodeURIComponent,d=p[p.length-1];
+  let q=`slat=${st.ll[0]}&slng=${st.ll[1]}&sname=${e(st.name)}&dlat=${d.ll[0]}&dlng=${d.ll[1]}&dname=${e(d.n)}`;
+  p.slice(0,-1).slice(0,5).forEach((v,i)=>q+=`&v${i+1}lat=${v.ll[0]}&v${i+1}lng=${v.ll[1]}&v${i+1}name=${e(v.n)}`);
   return 'nmap://route/car?'+q+'&appname=jeomgeom.schedule';
 }
-const routeBtn=t=>{const u=nmapRoute(t);return u?`<a class="btn" href="${u}">네이버 지도 앱으로 ${t.no}조 동선 보기</a>`:''};
+const routeBtn=t=>{const u=t.jobs.length?nmapRoute(t):null;return u?`<a class="btn" href="${u}">네이버 지도 앱으로 ${t.no}조 동선 보기</a>`:''};
 /* 구 확대 창 */
 let POP=null,VB=null,VB0=null;
 function openPop(r){
@@ -363,7 +388,8 @@ function drawPop(){
   const ds=GEO.D[r].map((d,i)=>`<a href="${naver(r,d.n)}" target="_blank" rel="noopener" class="dong"><title>${d.n} 네이버 지도에서 보기</title><path d="${d.p}" fill="${RCOL[r]}" fill-opacity="${[.10,.22,.16,.28][i%4]}" stroke="${RCOL[r]}" stroke-width="1" vector-effect="non-scaling-stroke"/></a>`).join('');
   const lb=GEO.D[r].map(d=>`<text x="${d.c[0]}" y="${d.c[1]-fs*1.1}" text-anchor="middle" font-size="${fs*.75}" class="halo" style="stroke-width:${fs*.2}">${d.n}</text>`).join('');
   const ts=P.res.filter(t=>t.region===r);
-  $('popMap').innerHTML=ctx+ds+lb+routeLines(P,spread(P,fs*1.1),ts,true,fs);
+  const ox=OFF(),b=GEO.R[r].b,inR=ox[0]>=b[0]&&ox[0]<=b[2]&&ox[1]>=b[1]&&ox[1]<=b[3];
+  $('popMap').innerHTML=ctx+ds+lb+(inR?offMark(fs):'')+routeLines(P,spread(P,fs*1.1),ts,true,fs,inR);
   $('popTeams').innerHTML=ts.length?ts.map(t=>`<div class="list" style="gap:6px;padding:8px 0;border-top:1px solid var(--line)">
     <div><b style="color:var(--t${t.no})">● ${t.no}조</b> <span class="sub">${t.jobs.length}곳</span></div>
     <div style="font-size:14px">${t.jobs.map((j,i)=>`${i+1}. ${hm(j.s)} <a class="nav" href="${naver(r,j.item.name)}" target="_blank" rel="noopener">${esc(j.item.name)||stopName(r,j.item.name)}</a>`).join('<br>')}</div>
@@ -374,13 +400,13 @@ const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
 /* 사용점검은 시간이 자유라서, 정기검사 자리는 고정한 채 사용점검 순서를 바꿔 이동거리가 가장 짧은 순서를 찾음 */
 function optimize(team,r){
   const us=team.filter(j=>j.item.type==='사용');if(us.length<2)return;
-  const cost=ord=>{let k=0,prev=null,c=0;team.forEach(j=>{const it=j.item.type==='사용'?ord[k++]:j.item;const p=pos0(r,it.name);if(prev)c+=dist(prev,p);prev=p});return c};
+  const cost=ord=>{let k=0,prev=OFF(),c=0;team.forEach(j=>{const it=j.item.type==='사용'?ord[k++]:j.item;const p=pos0(r,it.name);if(prev)c+=dist(prev,p);prev=p});return c};
   let best=us.map(j=>j.item),bc=cost(best);
   if(best.length<=6){
     const perm=(arr,acc)=>{if(!arr.length){const c=cost(acc);if(c<bc){bc=c;best=acc.slice()}return}arr.forEach((x,i)=>perm(arr.filter((_,k)=>k!==i),acc.concat([x])))};
     perm(best.slice(),[]);
   }else{
-    const left=best.slice(),ord=[];let prev=null;
+    const left=best.slice(),ord=[];let prev=OFF();
     team.forEach(j=>{if(j.item.type!=='사용'){prev=pos0(r,j.item.name);return}
       let bi=0;if(prev)left.forEach((x,i)=>{if(dist(prev,pos0(r,x.name))<dist(prev,pos0(r,left[bi].name)))bi=i});
       const x=left.splice(bi,1)[0];ord.push(x);prev=pos0(r,x.name)});
@@ -388,7 +414,7 @@ function optimize(team,r){
   }
   let k=0;team.forEach(j=>{if(j.item.type==='사용')j.item=best[k++]});
 }
-function routeCost(team,r){let c=0,prev=null;team.forEach(j=>{const p=pos0(r,j.item.name);if(prev)c+=dist(prev,p);prev=p});return c}
+function routeCost(team,r){let c=0,prev=OFF();team.forEach(j=>{const p=pos0(r,j.item.name);if(prev)c+=dist(prev,p);prev=p});return c}
 /* 같은 지역의 여러 조끼리 일을 맞바꿔 보고, 두 조의 이동거리 합이 줄면 바꾼 채로 둠 */
 function improve(teams,r){
   teams.forEach(t=>optimize(t,r));if(teams.length<2)return;
@@ -504,6 +530,19 @@ $('copy').onclick=()=>{
 };
 function fallback(txt){const t=$('bulk');t.closest('details').open=true;t.value=txt;t.select();toast('아래 칸 글자를 길게 눌러 복사하세요')}
 
+function showStart(){const st=START();$('stName').value=st.name;$('stAddr').value=st.addr||'';$('stInfo').textContent=`지도 위치: ${st.ll[0].toFixed(4)}, ${st.ll[1].toFixed(4)} · 모든 조 동선이 여기서 출발합니다.`}
+function setStart(){
+  const name=$('stName').value.trim()||'출발지',addr=$('stAddr').value.trim();
+  let ll=null;const m=addr.match(/(3[3-8]\.\d+)\s*,\s*(12[4-9]\.\d+)/);
+  if(m)ll=[+m[1],+m[2]];
+  else if(addr===(START().addr||''))ll=START().ll;
+  else{for(const r of REG){const d=findDong(r,addr);if(d){ll=d.ll;break}}}
+  if(!ll){if(addr&&addr===(START().addr||'')){ll=START().ll}else{toast('주소에서 동 이름을 못 찾았습니다. 동 이름이나 좌표를 넣어 주세요');showStart();return}}
+  S.cfg.start={name,addr,ll};save();render();showStart();toast('출발지를 바꿨습니다');
+}
+$('stName').onchange=setStart;$('stAddr').onchange=setStart;
+$('stReset').onclick=()=>{delete S.cfg.start;save();render();showStart();toast('기본 출발지로 돌렸습니다')};
+showStart();
 $('map').addEventListener('click',e=>{const g=e.target.closest('.rg');if(g)openPop(g.dataset.r)});
 $('map').addEventListener('keydown',e=>{const g=e.target.closest('.rg');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openPop(g.dataset.r)}});
 $('popX').onclick=closePop;$('pop').addEventListener('click',e=>{if(e.target.id==='pop')closePop()});
